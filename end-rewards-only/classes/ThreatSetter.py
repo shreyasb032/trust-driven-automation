@@ -18,7 +18,7 @@ class ThreatSetter:
             r = self.rng.uniform()
             if r <= self.prior_levels[i]:
                 self.threats[i] = 1
-                self.after_scan_levels[i] = self.rng.beta(28, 4)
+                self.after_scan_levels[i] = self.rng.beta(10, 2)
             else:
                 self.threats[i] = 0
-                self.after_scan_levels[i] = 1. - self.rng.beta(28, 4)
+                self.after_scan_levels[i] = 1. - self.rng.beta(10, 2)

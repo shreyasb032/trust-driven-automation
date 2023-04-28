@@ -36,6 +36,8 @@ class EndReward(RewardsBase):
         :param site_num: current site index
         :return: tuple of health loss reward and time loss reward
         """
+        if health <= 0:
+            return -1000, -time_
         if site_num == self.N - 1:
             return health, -time_
 

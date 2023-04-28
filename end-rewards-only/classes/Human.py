@@ -58,7 +58,7 @@ class HumanBase:
         :param threat_obs: the observed value of threat presence
         :return: trust_sample: a sampled value of trust
         """
-        hl, tc = self.reward_fun.reward()
+        hl, tc = self.reward_fun.reward(0.0, 0.0, 0)
         reward_0 = self.wh * hl * threat_obs  # Negative if threat observed, zero if not observed
         reward_1 = self.wc * tc
 

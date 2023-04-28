@@ -48,20 +48,18 @@ class NonTrustSolver:
         """
         sites_remaining = self.N - self.current_house
         # Indexed by number of stages, health_level, time_level
-        value_matrix = np.zeros((sites_remaining + 1, sites_remaining, sites_remaining), dtype=float)
-        action_matrix = np.zeros((sites_remaining, sites_remaining, sites_remaining), dtype=int)
+        value_matrix = np.zeros((sites_remaining + 1, sites_remaining + 1, sites_remaining + 1), dtype=float)
+        action_matrix = np.zeros((sites_remaining, sites_remaining + 1, sites_remaining + 1), dtype=int)
 
         # Going backwards through stages
         for i in reversed(range(sites_remaining)):
             site_number = i + self.current_house
             threat_level = self.prior_levels[site_number]
-            possible_health_levels = self.health - np.arange(i) * self.health_loss
-            possible_time_levels = self.time_ + np.arange(i) * self.time_loss
+            possible_health_levels = self.health - np.arange(i+1) * self.health_loss
+            possible_time_levels = self.time_ + np.arange(i+1) * self.time_loss
 
             if i == 0:
                 threat_level = self.after_scan_levels[site_number]
-                possible_health_levels = [possible_health_levels]
-                possible_time_levels = [possible_time_levels]
 
             for idx_h, h in enumerate(possible_health_levels):
                 for idx_c, c in enumerate(possible_time_levels):
@@ -81,7 +79,7 @@ class NonTrustSolver:
                         value_matrix[i, idx_h, idx_c] = val1
                         action_matrix[i, idx_h, idx_c] = 1
 
-            return action_matrix[0, 0, 0]
+        return action_matrix[0, 0, 0]
 
     def forward(self, threat_obs: int, action: int):
         """

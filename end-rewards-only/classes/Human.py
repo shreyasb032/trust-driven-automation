@@ -50,8 +50,11 @@ class HumanBase:
         self.performance_history = np.zeros((self.N,), dtype=int)
         self.action_history = np.zeros_like(self.performance_history)
 
-        self.trust_history = np.zeros((self.N+1,), dtype=float)
-        self.trust_history[0] = self.sample_trust()
+        self.trust_sample_history = np.zeros((self.N+1,), dtype=float)
+        self.trust_sample_history[0] = self.sample_trust()
+
+        self.trust_mean_history = np.zeros_like(self.trust_sample_history)
+        self.trust_mean_history[0] = self.trust_params[0] / (self.trust_params[0] + self.trust_params[1])
 
         self.health_history = np.zeros((self.N+1,), dtype=float)
         self.health_history[0] = self.health
@@ -85,6 +88,19 @@ class HumanBase:
         trust_sample = self.rng.beta(alpha, beta)
 
         return trust_sample
+
+    def mean_trust(self):
+        """
+        Gives the mean of the beta distribution modeling the trust
+        :return: trust_mean
+        """
+        num_successes = self.performance_history.sum()
+        num_failures = self.current_site + 1 - num_successes
+
+        alpha = self.trust_params['alpha0'] + self.trust_params['ws'] * num_successes
+        beta = self.trust_params['beta0'] + self.trust_params['wf'] * num_failures
+
+        return alpha / (alpha + beta)
 
     def forward(self, threat_obs: int, action: int):
         """
@@ -130,7 +146,10 @@ class HumanBase:
 
         # Sample trust and add it to the history
         trust = self.sample_trust()
-        self.trust_history[self.current_site] = trust
+        self.trust_sample_history[self.current_site] = trust
+
+        trust_mean = self.mean_trust()
+        self.trust_mean_history[self.current_site] = trust_mean
 
         return trust
 
@@ -147,14 +166,51 @@ class HumanBase:
 
         return _alpha, _beta
 
-    def update_posterior(self, threat_level: float):
+    def update_posterior(self, threat_level: float, trust: float):
         """
         Updates the posterior distribution on the health reward weight for the human
         ONLY use it for the model maintained by the robot.
         DO NOT update the posterior when simulating the human
         :param threat_level: The threat level reported by the drone AFTER SCANNING
+        :params trust: the level of trust reported by the human BEFORE CHOOSING AN ACTION
         """
         raise NotImplementedError
+
+    def get_rewards(self, threat_level: float):
+        """
+        A function to return the rewards for all possible actions
+        :param threat_level: The threat level reported by the drone
+        :return: reward_0, reward_1: The rewards for not using and using the armored robot respectively
+        """
+
+        hl, tc = self.reward_fun.reward(0.0, 0.0, 0)
+        reward_0 = threat_level * hl * self.wh
+        reward_1 = tc * self.wc
+
+        return reward_0, reward_1
+
+    def get_probabilities(self, trust: float, recommendation: int, threat_level: float):
+        """
+        Gives the probabilities of choosing action 0 and action 1 respectively
+        :param trust: the current level of trust (BEFORE CHOOSING AN ACTION)
+        :param recommendation: the recommendation given by the robot
+        :param threat_level: the threat level in the site (either reported by the drone after scanning or a prior level
+                of threat inside the site, depending on the site number)
+        :return: prob0, prob1: the probabilities of choosing action 0 and action 1 respectively
+        """
+
+        reward0, reward1 = self.get_rewards(threat_level)
+        p0 = 1. / (1. + np.exp(reward1 - reward0))
+        p1 = 1. - p0
+
+        if recommendation == 1:
+            prob1 = trust + (1. - trust) * p1
+            prob0 = (1. - trust) * p0
+        else:
+            prob1 = (1. - trust) * p1
+            prob0 = trust + (1. - trust) * p0
+
+        return prob0, prob1
 
 
 class DisuseBoundedRationalSimulator(HumanBase):
@@ -236,19 +292,20 @@ class DisuseBoundedRationalModel(HumanBase):
 
         return reward_0, reward_1
 
-    def update_posterior(self, threat_level: float):
+    def update_posterior(self, threat_level: float, trust:float):
         """
         Updates the posterior distribution on the health reward weight for the human
         ONLY use it for the model maintained by the robot.
         DO NOT update the posterior when simulating the human
         :params threat_level: the threat level reported by the drone AFTER SCANNING
+        :params trust: the level of trust reported by the human BEFORE CHOOSING AN ACTION
         """
         rec = self.recommendation_history[self.current_site - 1]
         action = self.action_history[self.current_site - 1]
 
         # Here, -1 gives the previous trust feedback. This makes sure that the trust we are using is from before making
         # the choice and not the value after making the action choice
-        trust = self.trust_history[self.current_site - 1]
+        # trust = self.trust_history[self.current_site - 1]
         health = self.health_history[self.current_site - 1]
         time_ = self.time_history[self.current_site - 1]
 

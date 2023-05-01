@@ -142,6 +142,7 @@ class SolverWithTrust:
         self.df = df
         self.reward_fun = reward_fun
         self.human_model = human_model
+        self.trust_feedback_history = np.zeros((self.N,), dtype=float)
 
     def forward(self, threat_obs: int, action: int, threat_level: float):
         """
@@ -190,10 +191,15 @@ class SolverWithTrust:
                     for idx_c, c in enumerate(possible_time_levels):
                         hl, tc = self.reward_fun.reward(h, c, site_number)
 
+                        # For recommending to NOT USE the armored robot
                         # 1. Compute the probabilities of choosing either action, based on the recommendation and
                         #    the estimate of the health reward weight of the human
+                        prob0, prob1 = self.human_model.get_probabilities(trust,
+                                                                          recommendation=0,
+                                                                          threat_level=threat_level)
                         # 2. Compute the one-step expected rewards for recommending each action based on these
                         #    probabilities
+                        reward = prob0 * self.whr * hl + prob1 * self.wcr * tc
                         # 3. Compute the q-value at this stage, state, and action using the Bellman equation
                         # 4. Set the value of this stage and state to be the maximum of the two
                         # 5. Return the action that corresponds to the value at stage 0, state 0,0,0

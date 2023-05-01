@@ -6,7 +6,7 @@ from classes.IRLModel import Posterior
 
 class HumanBase:
 
-    def __init__(self, whh: float,
+    def __init__(self, posterior: Posterior,
                  reward_fun: RewardsBase,
                  trust_params: Dict,
                  num_sites: int,
@@ -18,7 +18,7 @@ class HumanBase:
         """
         Initializes the base human class. The human class maintains a level of trust.
         It chooses action based on the recommendation, trust, the behavior model
-        :param whh: The health reward weight for the human
+        :param posterior: The posterior distribution on the health reward weight for the human
         :param reward_fun: The reward function
         :param trust_params: The true trust params of this human - a dict with keys alpha0, beta0, ws, wf
         :param seed: A seed for the random number generator used to sample trust and behavior
@@ -27,12 +27,13 @@ class HumanBase:
         :param health_loss: the amount of health lost after encountering threat without protection
         :param time_loss: the amount of time lost in using the armored robot
         """
-
-        self.wh = whh
-        self.wc = 1. - whh
+        self.posterior = posterior
+        self.wh = posterior.mean()
+        self.wc = 1. - self.wh
         self.reward_fun = reward_fun
         self.trust_params = trust_params
         self.recommendation = None
+        self.action = None
         self.rng = np.random.default_rng(seed=seed)
 
         self.health = health
@@ -44,13 +45,18 @@ class HumanBase:
         # Storage
         self.current_site = 0
         self.N = num_sites
+
         self.recommendation_history = np.zeros((self.N,), dtype=int)
         self.performance_history = np.zeros((self.N,), dtype=int)
         self.action_history = np.zeros_like(self.performance_history)
+
         self.trust_history = np.zeros((self.N+1,), dtype=float)
+        self.trust_history[0] = self.sample_trust()
+
         self.health_history = np.zeros((self.N+1,), dtype=float)
-        self.time_history = np.zeros((self.N+1,), dtype=float)
         self.health_history[0] = self.health
+
+        self.time_history = np.zeros((self.N+1,), dtype=float)
         self.time_history[0] = self.time_
 
     def choose_action(self, recommendation: int, threat_level: float):
@@ -62,6 +68,7 @@ class HumanBase:
         """
         trust = self.sample_trust()
         self.recommendation = recommendation
+        self.action = None
         raise NotImplementedError
 
     def sample_trust(self):
@@ -79,31 +86,75 @@ class HumanBase:
 
         return trust_sample
 
-    def forward(self, threat_obs: int):
+    def forward(self, threat_obs: int, action: int):
         """
         Updates the performance history based on immediate observed rewards
         Also updates the health and time based on the action chosen
         :param threat_obs: the observed value of threat presence
+        :param action: the action chosen by the human
         :return: trust_sample: a sampled value of trust
         """
-        i = self.current_site
+
+        # Update the performance history
         hl, tc = self.reward_fun.reward(0.0, 0.0, 0)
         reward_0 = self.wh * hl * threat_obs  # Negative if threat observed, zero if not observed
         reward_1 = self.wc * tc
 
         if self.recommendation == 1:
             if reward_1 >= reward_0:
-                self.performance_history[i] = 1
+                self.performance_history[self.current_site] = 1
             else:
-                self.performance_history[i] = 0
+                self.performance_history[self.current_site] = 0
         else:
             if reward_1 >= reward_0:
-                self.performance_history[i] = 1
+                self.performance_history[self.current_site] = 1
             else:
-                self.performance_history[i] = 0
+                self.performance_history[self.current_site] = 0
 
+        # Update the action history
+        self.action_history[self.current_site] = action
+
+        # Update the site number
         self.current_site += 1
-        return self.sample_trust()
+
+        # Update health and time
+        if action == 1:
+            self.time_ += self.time_loss
+        else:
+            if threat_obs:
+                self.health -= self.health_loss
+
+        # Add this to the history
+        self.time_history[self.current_site] = self.time_
+        self.health_history[self.current_site] = self.health
+
+        # Sample trust and add it to the history
+        trust = self.sample_trust()
+        self.trust_history[self.current_site] = trust
+
+        return trust
+
+    def current_health(self):
+        return self.health
+
+    def current_time(self):
+        return self.time_
+
+    def get_alphabeta(self):
+        ns = self.performance_history.sum()
+        _alpha = self.trust_params[0] + ns * self.trust_params[2]
+        _beta = self.trust_params[1] + (self.current_site + 1 - ns) * self.trust_params[3]
+
+        return _alpha, _beta
+
+    def update_posterior(self, threat_level: float):
+        """
+        Updates the posterior distribution on the health reward weight for the human
+        ONLY use it for the model maintained by the robot.
+        DO NOT update the posterior when simulating the human
+        :param threat_level: The threat level reported by the drone AFTER SCANNING
+        """
+        raise NotImplementedError
 
 
 class DisuseBoundedRationalSimulator(HumanBase):
@@ -111,16 +162,17 @@ class DisuseBoundedRationalSimulator(HumanBase):
     This class should be used for simulating the human's choice
     """
 
-    def __init__(self, whh: float, kappa: float, reward_fun: RewardsBase, trust_params: Dict):
+    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict, num_sites: int):
         """
         Initializes the base human class. The human class maintains a level of trust.
         It chooses action based on the recommendation, trust, the behavior model
-        :param whh: The health reward weight for the human
+        :param posterior: The distribution on the health reward weight for the human
         :param kappa: The rationality coefficient
         :param reward_fun: The reward function
         :param trust_params: The true trust params of this human - a dict with keys alpha0, beta0, ws, wf
+        :param num_sites: The number of sites in the mission
         """
-        super().__init__(whh, reward_fun, trust_params)
+        super().__init__(posterior, reward_fun, trust_params, num_sites)
         self.kappa = kappa
 
     def choose_action(self, recommendation: int, threat_level: float):
@@ -154,7 +206,7 @@ class DisuseBoundedRationalModel(HumanBase):
     the state of the human (health, time, trust, etc.)
     """
 
-    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict):
+    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict, num_sites: int):
         """
         Initializes the base human class. The human class maintains a level of trust.
         It chooses action based on the recommendation, trust, the behavior model
@@ -163,30 +215,41 @@ class DisuseBoundedRationalModel(HumanBase):
         :param reward_fun: The reward function
         :param trust_params: The estimated trust params of this human - a dict with keys alpha0, beta0, ws, wf
         """
-        super().__init__(posterior.mean(), reward_fun, trust_params)
-        self.posterior = posterior
+        super().__init__(posterior, reward_fun, trust_params, num_sites)
         self.kappa = kappa
 
-    def get_rewards(self, recommendation: int, threat_level: float):
+    def choose_action(self, recommendation: int, threat_level: float):
+        """This should NOT be used. This class only models the human for the robot.
+        It does not simulate choosing an action"""
+        return -1
+
+    def get_rewards(self, threat_level: float):
         """
         A function to return the rewards for all possible actions
-        :param recommendation: The recommendation given by the robot
         :param threat_level: The threat level reported by the drone
-        :return: action: the action chosen
+        :return: reward_0, reward_1: The rewards for not using and using the armored robot respectively
         """
-        trust = self.sample_trust()
 
-        # In case using the recommendation
-        if self.rng.uniform() < trust:
-            return recommendation
-
-        # In case disusing the recommendation
         hl, tc = self.reward_fun.reward(0.0, 0.0, 0)
         reward_0 = threat_level * hl * self.wh
         reward_1 = tc * self.wc
-        prob_0 = 1. / (1 + np.exp(self.kappa * (reward_1 - reward_0)))
 
-        if self.rng.uniform() < prob_0:
-            return 0
+        return reward_0, reward_1
 
-        return 1
+    def update_posterior(self, threat_level: float):
+        """
+        Updates the posterior distribution on the health reward weight for the human
+        ONLY use it for the model maintained by the robot.
+        DO NOT update the posterior when simulating the human
+        :params threat_level: the threat level reported by the drone AFTER SCANNING
+        """
+        rec = self.recommendation_history[self.current_site - 1]
+        action = self.action_history[self.current_site - 1]
+
+        # Here, -1 gives the previous trust feedback. This makes sure that the trust we are using is from before making
+        # the choice and not the value after making the action choice
+        trust = self.trust_history[self.current_site - 1]
+        health = self.health_history[self.current_site - 1]
+        time_ = self.time_history[self.current_site - 1]
+
+        self.posterior.update(rec, action, trust, health, time_, threat_level)

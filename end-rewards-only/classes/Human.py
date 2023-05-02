@@ -329,7 +329,7 @@ class DisuseBoundedRationalModel(HumanBase):
         health = self.health_history[self.current_site - 1]
         time_ = self.time_history[self.current_site - 1]
 
-        self.posterior.update(rec, action, trust, health, time_, threat_level)
+        self.posterior.update(rec, action, trust, health, time_, threat_level, self.current_site - 1)
 
     def get_trust_probabilities(self, threat_level: float, recommendation: int, w_star: float):
         """

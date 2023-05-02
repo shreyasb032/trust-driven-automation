@@ -144,16 +144,59 @@ class SolverWithTrust:
         self.human_model = human_model
         self.trust_feedback_history = np.zeros((self.N,), dtype=float)
 
-    def forward(self, threat_obs: int, action: int, threat_level: float):
+        temp_hl, temp_tc = self.human_model.reward_fun.reward(0., 0., 0)
+        self.w_star = temp_tc / (temp_hl + temp_tc)
+
+    def forward(self, threat_obs: int, action: int, threat_level: float, trust_fb: float):
         """
         Moves the solver one stage forward
         :param threat_obs: an integer representing the presence of threat inside the current site
         :param action: the action chosen by the human
         :param threat_level: the threat level reported by the drone AFTER SCANNING
+        :param trust_fb: the trust feedback given by the human AFTER searching the current site
         :return:
         """
         self.human_model.forward(threat_obs, action)
-        self.human_model.update_posterior(threat_level)
+        self.human_model.update_posterior(threat_level, self.trust_feedback_history[self.human_model.current_site - 1])
+        self.human_model.update_params(trust_fb)
+
+    def get_next_stage_value(self, stage: int,
+                             trust_idx: int,
+                             idx_h: int,
+                             idx_c: int,
+                             recommendation: int,
+                             threat_level: float,
+                             value_matrix: np.ndarray,
+                             prob0: float):
+        i = stage
+        j = trust_idx
+        prob1 = 1. - prob0
+        # 3. Compute the probabilities for increasing and decreasing trust
+        prob_trust_increase = self.human_model.get_trust_probabilities(threat_level, recommendation=recommendation,
+                                                                       w_star=self.w_star)
+        prob_trust_decrease = 1. - prob_trust_increase
+        # 4. Compute the q-value at this stage, state, and action using the Bellman equation
+        # Assuming that trust increases:
+        #       3 cases, chooses 0, health decreases, time remains same
+        #                chooses 0, health and time remain same
+        #                chooses 1, health remains same, time increases
+        next_stage_val = prob_trust_increase * prob0 * threat_level * \
+                         value_matrix[i + 1, j, idx_h + 1, idx_c]
+        next_stage_val += prob_trust_increase * prob0 * (1 - threat_level) * \
+                          value_matrix[i + 1, j, idx_h, idx_c]
+        next_stage_val += prob_trust_increase * prob1 * value_matrix[i + 1, j, idx_h, idx_c + 1]
+
+        # Assuming that trust decreases:
+        #       3 cases, chooses 0, health decreases, time remains same
+        #                chooses 0, health and time remain same
+        #                chooses 1, health remains same, time increases
+        next_stage_val += prob_trust_decrease * prob0 * threat_level * \
+                          value_matrix[i + 1, j + 1, idx_h + 1, idx_c]
+        next_stage_val += prob_trust_decrease * prob0 * (1 - threat_level) * \
+                          value_matrix[i + 1, j + 1, idx_h, idx_c]
+        next_stage_val += prob_trust_decrease * prob1 * value_matrix[i + 1, j + 1, idx_h, idx_c + 1]
+
+        return next_stage_val
 
     def get_action(self):
         """
@@ -194,15 +237,36 @@ class SolverWithTrust:
                         # For recommending to NOT USE the armored robot
                         # 1. Compute the probabilities of choosing either action, based on the recommendation and
                         #    the estimate of the health reward weight of the human
-                        prob0, prob1 = self.human_model.get_probabilities(trust,
-                                                                          recommendation=0,
-                                                                          threat_level=threat_level)
+                        prob0, prob1 = self.human_model.get_action_probabilities(trust,
+                                                                                 recommendation=0,
+                                                                                 threat_level=threat_level)
                         # 2. Compute the one-step expected rewards for recommending each action based on these
                         #    probabilities
-                        reward = prob0 * self.whr * hl + prob1 * self.wcr * tc
-                        # 3. Compute the q-value at this stage, state, and action using the Bellman equation
-                        # 4. Set the value of this stage and state to be the maximum of the two
-                        # 5. Return the action that corresponds to the value at stage 0, state 0,0,0
-                        pass
+                        reward0 = prob0 * self.whr * hl + prob1 * self.wcr * tc
+                        next_stage_val = self.get_next_stage_value(i, j, idx_h, idx_c, 0, threat_level, value_matrix,
+                                                                   prob0)
+                        q_val0 = reward0 + self.df * next_stage_val
 
-        return -1
+                        # For recommending to USE the armored robot
+                        # 1. Compute the probabilities of choosing either action, based on the recommendation and
+                        #    the estimate of the health reward weight of the human
+                        prob0, prob1 = self.human_model.get_action_probabilities(trust,
+                                                                                 recommendation=1,
+                                                                                 threat_level=threat_level)
+                        # 2. Compute the one-step expected rewards for recommending each action based on these
+                        #    probabilities
+                        reward1 = prob0 * self.whr * hl + prob1 * self.wcr * tc
+                        next_stage_val = self.get_next_stage_value(i, j, idx_h, idx_c, 1, threat_level, value_matrix,
+                                                                   prob0)
+                        q_val1 = reward1 + self.df * next_stage_val
+
+                        # 5. Set the value of this stage and state to be the maximum of the two
+                        if q_val1 >= q_val0:
+                            value_matrix[i, j, idx_h, idx_c] = q_val1
+                            action_matrix[i, j, idx_h, idx_c] = 1
+                        else:
+                            value_matrix[i, j, idx_h, idx_c] = q_val0
+                            action_matrix[i, j, idx_h, idx_c] = 0
+        # 6. Return the action that corresponds to the value at stage 0, state 0,0,0
+
+        return action_matrix[0, 0, 0, 0]

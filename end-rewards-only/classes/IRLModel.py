@@ -77,3 +77,7 @@ class Posterior:
 
     def mean(self):
         return np.sum(self.dist * self.weights)
+
+    def cdf(self, val):
+        idx = np.sum(self.weights[self.weights <= val])
+        return np.sum(self.dist[:idx])

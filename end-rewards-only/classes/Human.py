@@ -2,6 +2,7 @@ from classes.Rewards import RewardsBase
 from typing import Dict
 import numpy as np
 from classes.IRLModel import Posterior
+from classes.ParamsUpdater import Estimator
 
 
 class HumanBase:
@@ -172,7 +173,7 @@ class HumanBase:
         ONLY use it for the model maintained by the robot.
         DO NOT update the posterior when simulating the human
         :param threat_level: The threat level reported by the drone AFTER SCANNING
-        :params trust: the level of trust reported by the human BEFORE CHOOSING AN ACTION
+        :param trust: the level of trust reported by the human BEFORE CHOOSING AN ACTION
         """
         raise NotImplementedError
 
@@ -189,7 +190,7 @@ class HumanBase:
 
         return reward_0, reward_1
 
-    def get_probabilities(self, trust: float, recommendation: int, threat_level: float):
+    def get_action_probabilities(self, trust: float, recommendation: int, threat_level: float):
         """
         Gives the probabilities of choosing action 0 and action 1 respectively
         :param trust: the current level of trust (BEFORE CHOOSING AN ACTION)
@@ -211,6 +212,23 @@ class HumanBase:
             prob0 = trust + (1. - trust) * p0
 
         return prob0, prob1
+
+    def get_trust_probabilities(self, threat_level: float, recommendation: int, w_star: float):
+        """
+        Gives the probabilities of increasing trust, given the threat level and the recommendation
+        :param threat_level: the threat level (either after or before scanning)
+        :param recommendation: the recommendation given by the robot
+        :param w_star: the critical health weight above which the human cares about losing health
+        :return
+        """
+        raise NotImplementedError
+
+    def update_params(self, trust_fb: float):
+        """
+        Updates the estimated trust parameters of the human
+        :param trust_fb: the trust feedback given at the current site
+        """
+        raise NotImplementedError
 
 
 class DisuseBoundedRationalSimulator(HumanBase):
@@ -262,7 +280,8 @@ class DisuseBoundedRationalModel(HumanBase):
     the state of the human (health, time, trust, etc.)
     """
 
-    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict, num_sites: int):
+    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict, num_sites: int,
+                 params_updater: Estimator):
         """
         Initializes the base human class. The human class maintains a level of trust.
         It chooses action based on the recommendation, trust, the behavior model
@@ -273,6 +292,7 @@ class DisuseBoundedRationalModel(HumanBase):
         """
         super().__init__(posterior, reward_fun, trust_params, num_sites)
         self.kappa = kappa
+        self.params_updater = params_updater
 
     def choose_action(self, recommendation: int, threat_level: float):
         """This should NOT be used. This class only models the human for the robot.
@@ -310,3 +330,36 @@ class DisuseBoundedRationalModel(HumanBase):
         time_ = self.time_history[self.current_site - 1]
 
         self.posterior.update(rec, action, trust, health, time_, threat_level)
+
+    def get_trust_probabilities(self, threat_level: float, recommendation: int, w_star: float):
+        """
+        Gives the probability of increasing trust, given the threat level and the recommendation
+        :param threat_level: the threat level (either after or before scanning)
+        :param recommendation: the recommendation given by the robot
+        :param w_star: the critical health weight above which the human cares about losing health
+        :return prob: the probability of increasing trust
+        """
+
+        if recommendation == 0:
+            #       No threat           human cares about losing health    human does not care about losing health
+            prob = (1 - threat_level) * (1 - self.posterior.cdf(w_star)) + self.posterior.cdf(w_star)
+            return prob
+
+        # else (if recommendation = 1)
+        #       Threat present   Human cares about losing health
+        prob = threat_level * self.posterior.cdf(w_star)
+
+        return prob
+
+    def update_params(self, trust_fb: float):
+        """
+        Updates the estimated trust parameters of the human
+        :param trust_fb: the trust feedback given at the current site
+        """
+        updated_params = self.params_updater.get_params(list(self.trust_params.values()),
+                                                        self.performance_history[self.current_site-1],
+                                                        trust_fb)
+        i = 0
+        for k in self.trust_params.keys():
+            self.trust_params[k] = updated_params[i]
+            i += 1

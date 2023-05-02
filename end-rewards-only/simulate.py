@@ -1,8 +1,9 @@
-# The main idea here is that the robot will only earn rewards at the end of the mission
-# The human observes rewards at each decision-making stage and updates trust based on these observed rewards
+"""
+This file uses the Non trust solver. It is not human-robot collaboration, rather only robot choosing the optimal actions
+The robot solves the MDP for maximizing the end-rewards according to the weights assigned.
+"""
 
 import numpy as np
-from classes.Human import DisuseBoundedRational
 from classes.ThreatSetter import ThreatSetter
 from classes.Solver import NonTrustSolver
 from classes.Rewards import ConstantRewards, EndReward
@@ -14,9 +15,6 @@ def main():
     seed = 123
     df = 0.9
     whr = 0.6
-    # whh = 0.9
-    # kappa = 1.0
-    # trust_params = [90., 30., 20., 30.]
     health_loss_reward = -10
     time_loss_reward = -9
 
@@ -27,12 +25,9 @@ def main():
     threats = threat_setter.threats
 
     reward_fun_rob = EndReward(num_sites)
-    # reward_fun_hum = ConstantRewards(num_sites, health_loss_reward, time_loss_reward)
 
     solver = NonTrustSolver(num_sites, prior_levels, after_scan_levels, whr, df, reward_fun_rob)
-    # human = DisuseBoundedRational(whh, kappa, reward_fun_hum, trust_params)
 
-    # recommendation_history = np.zeros((num_sites,), dtype=int)
     action_history = np.zeros((num_sites,), dtype=int)
     action_history_immediate = np.zeros((num_sites,), dtype=int)
     health_history = np.zeros((num_sites + 1,), dtype=float)

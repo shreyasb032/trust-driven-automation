@@ -142,7 +142,8 @@ class SolverWithTrust:
         self.df = df
         self.reward_fun = reward_fun
         self.human_model = human_model
-        self.trust_feedback_history = np.zeros((self.N,), dtype=float)
+        self.trust_feedback_history = np.zeros((self.N+1,), dtype=float)
+        # This N+1 includes the trust before any interaction and trust reported after each site
 
         temp_hl, temp_tc = self.human_model.reward_fun.reward(0., 0., 0)
         self.w_star = temp_tc / (temp_hl + temp_tc)
@@ -198,7 +199,7 @@ class SolverWithTrust:
 
         return next_stage_val
 
-    def get_action(self):
+    def get_recommendation(self):
         """
         Returns the optimal action at the current site
         :return: the optimal action at the current site
@@ -222,8 +223,8 @@ class SolverWithTrust:
 
             for j, ns in enumerate(possible_successes):
                 nf = possible_failures[j]
-                _alpha = alpha_current + ns * self.human_model.trust_params[2]
-                _beta = beta_current + nf * self.human_model.trust_params[3]
+                _alpha = alpha_current + ns * self.human_model.trust_params['ws']
+                _beta = beta_current + nf * self.human_model.trust_params['wf']
                 trust = _alpha / (_alpha + _beta)
 
                 possible_health_levels = self.human_model.current_health() - \
@@ -270,3 +271,22 @@ class SolverWithTrust:
         # 6. Return the action that corresponds to the value at stage 0, state 0,0,0
 
         return action_matrix[0, 0, 0, 0]
+
+    def add_trust(self, trust_fb: float, site_num: int):
+        """
+        Adds trust feedback to the history maintained by the solver
+        :param trust_fb: The trust feedback given by the simulated human (not the model)
+        :param site_num: The current site number
+        """
+        self.trust_feedback_history[site_num + 1] = trust_fb
+
+    def get_initial_guess(self, trust_fb: float):
+        """
+        Gets an initial guess for the trust parameters of the human.
+        It also adds the initial trust sample and mean to the history maintained by the human model
+        :param trust_fb: The trust feedback given by the human BEFORE ANY INTERACTION with the robot
+                         (signifies an inherent level of trust for robotic systems)
+        """
+
+        self.human_model.update_params(trust_fb, first=True)
+        self.human_model.add_initial_trust()

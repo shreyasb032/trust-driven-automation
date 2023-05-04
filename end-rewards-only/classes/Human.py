@@ -53,10 +53,11 @@ class HumanBase:
         self.action_history = np.zeros_like(self.performance_history)
 
         self.trust_sample_history = np.zeros((self.N+1,), dtype=float)
-        self.trust_sample_history[0] = self.sample_trust()
+        # self.trust_sample_history[0] = self.sample_trust()
 
         self.trust_mean_history = np.zeros_like(self.trust_sample_history)
-        self.trust_mean_history[0] = self.trust_params[0] / (self.trust_params[0] + self.trust_params[1])
+        # self.trust_mean_history[0] = self.trust_params["alpha0"] / \
+        #                              (self.trust_params["alpha0"] + self.trust_params["beta0"])
 
         self.health_history = np.zeros((self.N+1,), dtype=float)
         self.health_history[0] = self.health
@@ -90,6 +91,19 @@ class HumanBase:
         trust_sample = self.rng.beta(alpha, beta)
 
         return trust_sample
+
+    def add_initial_trust(self):
+        """
+        Adds an initial value of trust to the trust history.
+        This is assumed to be the trust before any interaction. Should not be used more than once
+        """
+        trust = self.sample_trust()
+        self.trust_sample_history[0] = trust
+
+        trust_mean = self.trust_params['alpha0'] / (self.trust_params['alpha0'] + self.trust_params['beta0'])
+        self.trust_mean_history[0] = trust_mean
+
+        return trust
 
     def mean_trust(self):
         """
@@ -162,9 +176,10 @@ class HumanBase:
         return self.time_
 
     def get_alphabeta(self):
+
         ns = self.performance_history.sum()
-        _alpha = self.trust_params[0] + ns * self.trust_params[2]
-        _beta = self.trust_params[1] + (self.current_site + 1 - ns) * self.trust_params[3]
+        _alpha = self.trust_params['alpha0'] + ns * self.trust_params['ws']
+        _beta = self.trust_params['beta0'] + (self.current_site + 1 - ns) * self.trust_params['wf']
 
         return _alpha, _beta
 
@@ -224,10 +239,12 @@ class HumanBase:
         """
         raise NotImplementedError
 
-    def update_params(self, trust_fb: float):
+    def update_params(self, trust_fb: float, first: bool = False):
         """
         Updates the estimated trust parameters of the human
         :param trust_fb: the trust feedback given at the current site
+        :param first: if true, the feedback is given BEFORE ANY INTERACTION with the robot (inherent trust), else
+                      it is the trust after searching a site (after observing performance)
         """
         raise NotImplementedError
 
@@ -383,14 +400,20 @@ class DisuseBoundedRationalModel(HumanBase):
 
         return prob
 
-    def update_params(self, trust_fb: float):
+    def update_params(self, trust_fb: float, first: bool = False):
         """
         Updates the estimated trust parameters of the human
         :param trust_fb: the trust feedback given at the current site
+        :param first: if true, the feedback is given BEFORE ANY INTERACTION with the robot (inherent trust), else
+                      it is the trust after searching a site (after observing performance)
         """
-        updated_params = self.params_updater.get_params(list(self.trust_params.values()),
-                                                        self.performance_history[self.current_site-1],
-                                                        trust_fb)
+
+        if first:
+            updated_params = self.params_updater.get_initial_guess(trust_fb)
+        else:
+            updated_params = self.params_updater.get_params(list(self.trust_params.values()),
+                                                            self.performance_history[self.current_site-1],
+                                                            trust_fb)
         i = 0
         for k in self.trust_params.keys():
             self.trust_params[k] = updated_params[i]

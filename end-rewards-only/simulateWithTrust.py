@@ -9,7 +9,7 @@ from classes.ParamsUpdater import Estimator
 
 def main():
     # Mission settings
-    num_sites = 20
+    num_sites = 5
     threat_level = 0.5
     health_loss = 5
     time_loss = 10
@@ -51,8 +51,9 @@ def main():
     posterior_simulated.dist[idx] += 100                       # Increase the distribution pdf at the specified weight
     posterior_simulated.normalize()
     simulated_human = DisuseBoundedRationalSimulator(posterior_simulated, kappa_simulated,
-                                                     reward_fun_simulated, trust_params_simulated,
-                                                     num_sites)
+                                                     reward_fun_simulated, trust_params_simulated,num_sites,
+                                                     seed=123, health=100., time_=0.,
+                                                     health_loss=health_loss, time_loss=time_loss)
 
     # Threat setter
     threat_setter = ThreatSetter(num_sites, threat_level, seed=123)
@@ -65,11 +66,35 @@ def main():
     model_posterior = Posterior(kappa=kappa_model, stepsize=posterior_stepsize_model,
                                 reward_fun=reward_fun_model)
     human_model = DisuseBoundedRationalModel(model_posterior, kappa_model, reward_fun_model, trust_params_model,
-                                             num_sites, params_estimator)
+                                             num_sites, params_estimator,
+                                             seed=123, health=100., time_=0.,
+                                             health_loss=health_loss, time_loss=time_loss)
 
     # Solver with trust
     solver = SolverWithTrust(num_sites, prior_levels, after_scan_levels, whr, df, reward_fun=reward_fun_solver,
                              human_model=human_model)
+
+    trust_fb = simulated_human.add_initial_trust()
+    # Add the initial trust feedback before observing any performance of the recommendations
+    solver.add_trust(trust_fb, -1)
+    # Get an initial guess for the trust parameters of the human model for the solver
+    solver.get_initial_guess(trust_fb)
+
+    for i in range(num_sites):
+        # Get the recommendation
+        rec = solver.get_recommendation()
+
+        # Choose the action
+        action = simulated_human.choose_action(rec, threat_level=after_scan_levels[i])
+
+        # Move the human forward, and get trust feedback
+        trust_fb = simulated_human.forward(threat_obs=threats[i], action=action)
+
+        # Move the solver forward. This updates the posterior too
+        solver.add_trust(trust_fb, i)
+        solver.forward(threat_obs=threats[i], action=action, threat_level=after_scan_levels[i], trust_fb=trust_fb)
+
+    # Print stuff
 
 
 if __name__ == "__main__":

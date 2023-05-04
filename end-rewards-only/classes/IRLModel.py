@@ -99,5 +99,5 @@ class Posterior:
         Returns the cumulative distribution function of the currently maintained distribution
         :param val: the value at which the cdf is to be computed
         """
-        idx = np.sum(self.weights[self.weights <= val])
+        idx = np.sum(self.weights <= val) - 1
         return np.sum(self.dist[:idx])

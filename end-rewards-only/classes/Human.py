@@ -22,6 +22,7 @@ class HumanBase:
         :param posterior: The posterior distribution on the health reward weight for the human
         :param reward_fun: The reward function
         :param trust_params: The true trust params of this human - a dict with keys alpha0, beta0, ws, wf
+        :param num_sites: The number of sites in the mission
         :param seed: A seed for the random number generator used to sample trust and behavior
         :param health: the starting health of the human
         :param time_: the time spent in the simulation
@@ -236,7 +237,16 @@ class DisuseBoundedRationalSimulator(HumanBase):
     This class should be used for simulating the human's choice
     """
 
-    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict, num_sites: int):
+    def __init__(self, posterior: Posterior,
+                 kappa: float,
+                 reward_fun: RewardsBase,
+                 trust_params: Dict,
+                 num_sites: int,
+                 seed: int = 123,
+                 health: float = 100.,
+                 time_: float = 0.,
+                 health_loss: float = 10.,
+                 time_loss: float = 10.):
         """
         Initializes the base human class. The human class maintains a level of trust.
         It chooses action based on the recommendation, trust, the behavior model
@@ -245,8 +255,13 @@ class DisuseBoundedRationalSimulator(HumanBase):
         :param reward_fun: The reward function
         :param trust_params: The true trust params of this human - a dict with keys alpha0, beta0, ws, wf
         :param num_sites: The number of sites in the mission
+        :param seed: A seed for the random number generator used to sample trust and behavior
+        :param health: the starting health of the human
+        :param time_: the time spent in the simulation
+        :param health_loss: the amount of health lost after encountering threat without protection
+        :param time_loss: the amount of time lost in using the armored robot
         """
-        super().__init__(posterior, reward_fun, trust_params, num_sites)
+        super().__init__(posterior, reward_fun, trust_params, num_sites, seed, health, time_, health_loss, time_loss)
         self.kappa = kappa
 
     def choose_action(self, recommendation: int, threat_level: float):
@@ -280,8 +295,17 @@ class DisuseBoundedRationalModel(HumanBase):
     the state of the human (health, time, trust, etc.)
     """
 
-    def __init__(self, posterior: Posterior, kappa: float, reward_fun: RewardsBase, trust_params: Dict, num_sites: int,
-                 params_updater: Estimator):
+    def __init__(self, posterior: Posterior,
+                 kappa: float,
+                 reward_fun: RewardsBase,
+                 trust_params: Dict,
+                 num_sites: int,
+                 params_updater: Estimator,
+                 seed: int = 123,
+                 health: float = 100.,
+                 time_: float = 0.,
+                 health_loss: float = 10.,
+                 time_loss: float = 10.):
         """
         Initializes the base human class. The human class maintains a level of trust.
         It chooses action based on the recommendation, trust, the behavior model
@@ -289,8 +313,16 @@ class DisuseBoundedRationalModel(HumanBase):
         :param kappa: The rationality coefficient
         :param reward_fun: The reward function
         :param trust_params: The estimated trust params of this human - a dict with keys alpha0, beta0, ws, wf
+        :param num_sites: The number of sites in the mission
+        :param params_updater: The class that updates trust parameters after receiving feedback
+        :param seed: A seed for the random number generator used to sample trust and behavior
+        :param health: the starting health of the human
+        :param time_: the time spent in the simulation
+        :param health_loss: the amount of health lost after encountering threat without protection
+        :param time_loss: the amount of time lost in using the armored robot
         """
-        super().__init__(posterior, reward_fun, trust_params, num_sites)
+
+        super().__init__(posterior, reward_fun, trust_params, num_sites, seed, health, time_, health_loss, time_loss)
         self.kappa = kappa
         self.params_updater = params_updater
 

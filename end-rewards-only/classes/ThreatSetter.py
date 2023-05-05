@@ -14,7 +14,7 @@ class ThreatSetter:
     def set_threats(self):
 
         for i in range(self.N):
-            self.prior_levels[i] += self.threat_level + self.rng.normal(scale=0.1)
+            self.prior_levels[i] += max(min(self.threat_level + self.rng.normal(scale=0.1), 1.0), 0.0)
             r = self.rng.uniform()
             if r <= self.prior_levels[i]:
                 self.threats[i] = 1

@@ -38,7 +38,7 @@ class EndReward(RewardsBase):
         """
         if health <= 0:
             return -1000, -time_
-        if site_num == self.N - 1:
+        if site_num == self.N:
             return health, -time_
 
         return 0, 0

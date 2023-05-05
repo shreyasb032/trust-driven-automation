@@ -60,7 +60,21 @@ class NonTrustSolver:
         action_matrix = np.zeros((sites_remaining, sites_remaining + 1, sites_remaining + 1), dtype=int)
 
         # Going backwards through stages
-        for i in reversed(range(sites_remaining)):
+        for i in reversed(range(sites_remaining + 1)):
+
+            if i == sites_remaining:
+                possible_health_levels = self.health - np.arange(i + 1) * self.health_loss
+                possible_time_levels = self.time_ + np.arange(i + 1) * self.time_loss
+
+                for idx_h, _health in enumerate(possible_health_levels):
+                    for idx_c, _time in enumerate(possible_time_levels):
+                        hl, tc = self.reward_fun.reward(_health, _time, i)
+                        # hl and tc are the state dependent (action independent) rewards
+                        val = self.whr * hl + self.wcr * tc
+                        value_matrix[i, idx_h, idx_c] = val
+
+                continue
+
             site_number = i + self.current_house
             threat_level = self.prior_levels[site_number]
             possible_health_levels = self.health - np.arange(i + 1) * self.health_loss
@@ -78,7 +92,7 @@ class NonTrustSolver:
                     val0 = self.whr * hl + self.wcr * tc + \
                            self.df * (threat_level * value_matrix[i + 1, idx_h + 1, idx_c]
                                       + (1. - threat_level) * value_matrix[i + 1, idx_h, idx_c])
-                    val1 = self.whr * hl + self.wcr * tc + self.df * (value_matrix[i + 1, idx_h, idx_c + 1])
+                    val1 = self.whr * hl + self.wcr * tc + self.df * (value_matrix[i + 1, idx_h, idx_c+1])
 
                     if val0 > val1:
                         value_matrix[i, idx_h, idx_c] = val0
@@ -210,11 +224,10 @@ class SolverWithTrust:
 
         alpha_current, beta_current = self.human_model.get_alphabeta()
         # Going backwards through stages
-        for i in reversed(range(sites_remaining)):
-            site_number = i + self.human_model.current_site
-            threat_level = self.prior_levels[site_number]
+        for i in reversed(range(sites_remaining + 1)):
             possible_successes = np.arange(i + 1)
             possible_failures = sites_remaining - possible_successes
+            site_number = i + self.human_model.current_site
             if i == 0:
                 threat_level = self.after_scan_levels[site_number]
 
@@ -230,6 +243,16 @@ class SolverWithTrust:
 
                 for idx_h, _health in enumerate(possible_health_levels):
                     for idx_c, _time in enumerate(possible_time_levels):
+
+                        if i == sites_remaining:
+                            # Handle the last site differently
+                            hl, tc = self.reward_fun.reward(_health, _time, site_number)
+                            val = self.whr * hl + self.wcr * tc
+                            value_matrix[i, j, idx_h, idx_c] = val
+                            continue
+
+                        threat_level = self.prior_levels[site_number]
+
                         hl, tc = self.reward_fun.reward(_health, _time, site_number)
 
                         # For recommending to NOT USE the armored robot
@@ -268,6 +291,7 @@ class SolverWithTrust:
                             value_matrix[i, j, idx_h, idx_c] = q_val0
                             action_matrix[i, j, idx_h, idx_c] = 0
 
+        # import pdb; pdb.set_trace()
         # 6. Return the action that corresponds to the value at stage 0, state 0,0,0
         return action_matrix[0, 0, 0, 0]
 

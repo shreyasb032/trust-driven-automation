@@ -11,6 +11,7 @@ class MissionSettings:
         self.time_ = args.starting_time
         self.health_loss_cost = args.health_loss_cost
         self.time_loss_cost = args.time_loss_cost
+        self.threat_level = args.threat_level
 
 
 class SimulatedHumanSettings:
@@ -23,7 +24,7 @@ class SimulatedHumanSettings:
                              "beta0": args.simulated_beta0,
                              "ws": args.simulated_ws,
                              "wf": args.simulated_wf}
-        self.seed = args.seed_simulated
+        self.seed = args.simulated_seed
 
 
 class HumanModelSettings:
@@ -35,7 +36,7 @@ class HumanModelSettings:
                              "beta0": args.model_beta0,
                              "ws": args.model_ws,
                              "wf": args.model_wf}
-        self.seed = args.seed_model
+        self.seed = args.model_seed
 
 
 class SolverSettings:
@@ -51,3 +52,9 @@ class ParamsEstimatorSettings:
         self.num_iters = args.estimator_num_iterations
         self.stepsize = args.estimtor_stepsize
         self.error_tolerance = args.estimator_error_tolerance
+
+
+class ThreatSetterSettings:
+
+    def __init__(self):
+        pass

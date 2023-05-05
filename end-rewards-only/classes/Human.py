@@ -52,19 +52,22 @@ class HumanBase:
         self.performance_history = np.zeros((self.N,), dtype=int)
         self.action_history = np.zeros_like(self.performance_history)
 
-        self.trust_sample_history = np.zeros((self.N+1,), dtype=float)
+        self.trust_sample_history = np.zeros((self.N + 1,), dtype=float)
         self.trust_mean_history = np.zeros_like(self.trust_sample_history)
 
-        self.health_history = np.zeros((self.N+1,), dtype=float)
+        self.health_history = np.zeros((self.N + 1,), dtype=float)
         self.health_history[0] = self.health
 
-        self.time_history = np.zeros((self.N+1,), dtype=float)
+        self.time_history = np.zeros((self.N + 1,), dtype=float)
         self.time_history[0] = self.time_
 
-        self.trust_parameter_history = {'alpha0': np.zeros((self.N+1,), dtype=float),
-                                        'beta0': np.zeros((self.N+1,), dtype=float),
-                                        'ws': np.zeros((self.N+1,), dtype=float),
-                                        'wf': np.zeros((self.N+1,), dtype=float)}
+        self.trust_parameter_history = {'alpha0': np.zeros((self.N + 1,), dtype=float),
+                                        'beta0': np.zeros((self.N + 1,), dtype=float),
+                                        'ws': np.zeros((self.N + 1,), dtype=float),
+                                        'wf': np.zeros((self.N + 1,), dtype=float)}
+
+        self.wh_mean_history = np.zeros((self.N + 1,), dtype=float)
+        self.wh_mean_history[0] = self.posterior.mean()
 
     def choose_action(self, recommendation: int, threat_level: float):
         """
@@ -362,7 +365,7 @@ class DisuseBoundedRationalModel(HumanBase):
 
         return reward_0, reward_1
 
-    def update_posterior(self, threat_level: float, trust:float):
+    def update_posterior(self, threat_level: float, trust: float):
         """
         Updates the posterior distribution on the health reward weight for the human
         ONLY use it for the model maintained by the robot.
@@ -380,6 +383,7 @@ class DisuseBoundedRationalModel(HumanBase):
         time_ = self.time_history[self.current_site - 1]
 
         self.posterior.update(rec, action, trust, health, time_, threat_level, self.current_site - 1)
+        self.wh_mean_history[self.current_site] = self.posterior.mean()
 
     def get_trust_probabilities(self, threat_level: float, recommendation: int, w_star: float):
         """
@@ -415,7 +419,7 @@ class DisuseBoundedRationalModel(HumanBase):
                 self.trust_parameter_history[k][0] = v
         else:
             self.trust_params = self.params_updater.get_params(self.trust_params,
-                                                               self.performance_history[self.current_site-1],
+                                                               self.performance_history[self.current_site - 1],
                                                                trust_fb,
                                                                self.current_site)
             for k, v in self.trust_params.items():

@@ -268,8 +268,8 @@ class SolverWithTrust:
                         else:
                             value_matrix[i, j, idx_h, idx_c] = q_val0
                             action_matrix[i, j, idx_h, idx_c] = 0
-        # 6. Return the action that corresponds to the value at stage 0, state 0,0,0
 
+        # 6. Return the action that corresponds to the value at stage 0, state 0,0,0
         return action_matrix[0, 0, 0, 0]
 
     def add_trust(self, trust_fb: float, site_num: int):

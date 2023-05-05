@@ -53,17 +53,18 @@ class HumanBase:
         self.action_history = np.zeros_like(self.performance_history)
 
         self.trust_sample_history = np.zeros((self.N+1,), dtype=float)
-        # self.trust_sample_history[0] = self.sample_trust()
-
         self.trust_mean_history = np.zeros_like(self.trust_sample_history)
-        # self.trust_mean_history[0] = self.trust_params["alpha0"] / \
-        #                              (self.trust_params["alpha0"] + self.trust_params["beta0"])
 
         self.health_history = np.zeros((self.N+1,), dtype=float)
         self.health_history[0] = self.health
 
         self.time_history = np.zeros((self.N+1,), dtype=float)
         self.time_history[0] = self.time_
+
+        self.trust_parameter_history = {'alpha0': np.zeros((self.N+1,), dtype=float),
+                                        'beta0': np.zeros((self.N+1,), dtype=float),
+                                        'ws': np.zeros((self.N+1,), dtype=float),
+                                        'wf': np.zeros((self.N+1,), dtype=float)}
 
     def choose_action(self, recommendation: int, threat_level: float):
         """
@@ -139,9 +140,9 @@ class HumanBase:
                 self.performance_history[self.current_site] = 0
         else:
             if reward_1 >= reward_0:
-                self.performance_history[self.current_site] = 1
-            else:
                 self.performance_history[self.current_site] = 0
+            else:
+                self.performance_history[self.current_site] = 1
 
         # Update the action history
         self.action_history[self.current_site] = action
@@ -410,8 +411,12 @@ class DisuseBoundedRationalModel(HumanBase):
 
         if first:
             self.trust_params = self.params_updater.get_initial_guess(trust_fb)
+            for k, v in self.trust_params.items():
+                self.trust_parameter_history[k][0] = v
         else:
             self.trust_params = self.params_updater.get_params(self.trust_params,
                                                                self.performance_history[self.current_site-1],
                                                                trust_fb,
                                                                self.current_site)
+            for k, v in self.trust_params.items():
+                self.trust_parameter_history[k][self.current_site] = v

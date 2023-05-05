@@ -12,6 +12,7 @@ class MissionSettings:
         self.health_loss_cost = args.health_loss_cost
         self.time_loss_cost = args.time_loss_cost
         self.threat_level = args.threat_level
+        self.threat_seed = args.threat_seed
 
 
 class SimulatedHumanSettings:
@@ -19,7 +20,7 @@ class SimulatedHumanSettings:
     def __init__(self, args: argparse.Namespace):
         self.kappa = args.simulated_kappa
         self.posterior_stepsize = args.simulated_posterior_stepsize
-        self.wh = args.simulated_whh
+        self.wh = args.simulated_wh
         self.trust_params = {"alpha0": args.simulated_alpha0,
                              "beta0": args.simulated_beta0,
                              "ws": args.simulated_ws,
@@ -50,11 +51,5 @@ class ParamsEstimatorSettings:
 
     def __init__(self, args: argparse.Namespace):
         self.num_iters = args.estimator_num_iterations
-        self.stepsize = args.estimtor_stepsize
+        self.stepsize = args.estimator_stepsize
         self.error_tolerance = args.estimator_error_tolerance
-
-
-class ThreatSetterSettings:
-
-    def __init__(self):
-        pass

@@ -85,8 +85,8 @@ class Estimator:
         :return guess_params: the updated trust parameters
         """
 
-        self.performance[site_num] = performance
-        self.feedback[site_num + 1] = trust_fb
+        self.performance[site_num - 1] = performance
+        self.feedback[site_num] = trust_fb
 
         factor = self.stepsize
         curr_house = len(self.performance)

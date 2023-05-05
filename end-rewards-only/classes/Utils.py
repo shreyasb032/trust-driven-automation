@@ -10,6 +10,7 @@ def add_common_args():
     parser = add_model_human_args(parser)
     parser = add_simulated_human_args(parser)
     parser = add_solver_args(parser)
+    parser = add_estimator_args(parser)
 
     return parser
 
@@ -17,7 +18,7 @@ def add_common_args():
 def add_mission_args(parser: argparse.ArgumentParser):
     """
     Adds arguments related to mission settings:
-    num_sites: number of sites in the mission (default: 20)
+    num_sites: number of sites in the mission (default: 5)
     health_loss: health lost after encountering threat without protection (default: 5)
     time_loss: time lost after using armored robot (default: 10)
     starting_health: starting health of the human (default: 100.)
@@ -25,9 +26,10 @@ def add_mission_args(parser: argparse.ArgumentParser):
     health_loss_cost: the reward associated with losing health (default: -10.)
     time_loss_cost: the reward associated with losing time (default: -9.)
     threat_level: the general level of threat in the mission (default: 0.5)
+    threat_seed: the seed given to the threat setter (default: 123)
     """
-    parser.add_argument('--num-sites', type=int, default=20,
-                        help="number of sites in the mission (default: 20)")
+    parser.add_argument('--num-sites', type=int, default=5,
+                        help="number of sites in the mission (default: 5)")
 
     parser.add_argument('--health-loss', type=float, default=5.,
                         help="health lost after encountering threat without protection (default: 5.)")
@@ -49,6 +51,9 @@ def add_mission_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--threat-level', type=float, default=0.5,
                         help="the general level of threat in the mission (default: 0.5)")
+
+    parser.add_argument('--threat-seed', type=int, default=123,
+                        help='the seed given to the threat setter (default: 123)')
 
     return parser
 
@@ -139,5 +144,25 @@ def add_solver_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--discount-factor', type=float, default=0.9,
                         help='the discount factor in the value iteration algorithm (default=0.9)')
+
+    return parser
+
+
+def add_estimator_args(parser: argparse.ArgumentParser):
+    """
+    Adds arguments related to the trust parameter estimator
+    estimator_num_iterations: maximum number of gradient steps to take (default: 200)
+    estimator_stepsize: learning rate of the gradient descent algorithm (default: 0.0005)
+    estimator_error_tolerance: error tolerance below which the algorithm stops prematurely (default: 0.01)
+    """
+
+    parser.add_argument('--estimator-num-iterations', type=int, default=200,
+                        help="maximum number of gradient steps to take (default: 200)")
+
+    parser.add_argument('--estimator-stepsize', type=float, default=0.0005,
+                        help='learning rate of the gradient descent algorithm (default: 0.0005)')
+
+    parser.add_argument('--estimator-error-tolerance', type=float, default=0.01,
+                        help='error tolerance below which the algorithm stops prematurely (default: 0.01)')
 
     return parser

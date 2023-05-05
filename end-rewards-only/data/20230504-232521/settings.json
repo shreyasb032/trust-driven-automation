@@ -1,0 +1,40 @@
+{
+    "Mission-settings": {
+        "num_sites": 5,
+        "health_loss": 5.0,
+        "time_loss": 10.0,
+        "health": 100.0,
+        "time_": 0.0,
+        "health_loss_cost": -10.0,
+        "time_loss_cost": -9.0,
+        "threat_level": 0.5,
+        "threat_seed": 123
+    },
+    "Simulated-human-settings": {
+        "kappa": 0.8,
+        "posterior_stepsize": 0.02,
+        "wh": 0.8,
+        "trust_params": {
+            "alpha0": 20.0,
+            "beta0": 10.0,
+            "ws": 5.0,
+            "wf": 10.0
+        },
+        "seed": 123
+    },
+    "Human-model-settings": {
+        "kappa": 0.8,
+        "posterior_stepsize": 0.02,
+        "trust_params": {
+            "alpha0": 20.0,
+            "beta0": 10.0,
+            "ws": 5.0,
+            "wf": 10.0
+        },
+        "seed": 123
+    },
+    "Solver-settings": {
+        "wh": 0.8,
+        "df": 0.9
+    }
+}

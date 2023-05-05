@@ -1,9 +1,11 @@
-import json
+"""
+This file demonstrates the use of SolverWithTrust
+"""
 
+import json
 import numpy as np
 from datetime import datetime
 import os
-
 import pandas as pd
 
 from classes.Human import DisuseBoundedRationalModel, DisuseBoundedRationalSimulator
@@ -111,11 +113,12 @@ def main():
         action = simulated_human.choose_action(rec, threat_level=after_scan_levels[i])
 
         # Move the human forward, and get trust feedback
-        trust_fb = simulated_human.forward(threat_obs=threats[i], action=action)
+        trust_fb = simulated_human.forward(threat_obs=threats[i], action=action, recommendation=rec)
 
         # Move the solver forward. This updates the posterior too
         solver.add_trust(trust_fb, i)
-        solver.forward(threat_obs=threats[i], action=action, threat_level=after_scan_levels[i], trust_fb=trust_fb)
+        solver.forward(threat_obs=threats[i], action=action, threat_level=after_scan_levels[i], trust_fb=trust_fb,
+                       recommendation=rec)
 
     # Save stuff to a file
     # Site number, threat level prior, threat level after scan, recommendation, action, trust_fb, trust_est mean,
@@ -124,7 +127,10 @@ def main():
     data = {'Site-number': np.arange(mission_settings.num_sites + 1)[1:], 'Prior': prior_levels,
             'After-scan': after_scan_levels, 'threat': threats,
             'recommendations': solver.human_model.recommendation_history,
-            'actions': solver.human_model.action_history, 'trust-feedback': solver.trust_feedback_history[1:],
+            'actions': solver.human_model.action_history,
+            'health-after': simulated_human.health_history[1:],
+            'time-after': simulated_human.time_history[1:],
+            'trust-feedback': solver.trust_feedback_history[1:],
             'trust-feedback-mean': simulated_human.trust_mean_history[1:],
             'trust-estimated-mean': solver.human_model.trust_mean_history[1:],
             'trust-estimated-sample': solver.human_model.trust_sample_history[1:],
@@ -146,7 +152,9 @@ def main():
     df = pd.DataFrame(data=data)
 
     df_first_row = pd.DataFrame(
-        [[0, None, None, None, None, None, solver.trust_feedback_history[0],
+        [[0, None, None, None, None, None, simulated_human.health_history[0],
+          simulated_human.time_history[0],
+          solver.trust_feedback_history[0],
           simulated_human.trust_mean_history[0],
           solver.human_model.trust_mean_history[0],
           solver.human_model.trust_sample_history[0],
@@ -159,7 +167,7 @@ def main():
     )
 
     directory = datetime.now().strftime("%Y%m%d-%H%M%S")
-    directory = os.path.join('.', 'data', directory)
+    directory = os.path.join('.', 'data', 'WithTrust', directory)
 
     if not os.path.exists(directory):
         os.makedirs(directory)

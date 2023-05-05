@@ -122,19 +122,25 @@ class HumanBase:
 
         return alpha / (alpha + beta)
 
-    def forward(self, threat_obs: int, action: int):
+    def forward(self, threat_obs: int, action: int, recommendation: int):
         """
         Updates the performance history based on immediate observed rewards
         Also updates the health and time based on the action chosen
         :param threat_obs: the observed value of threat presence
         :param action: the action chosen by the human
+        :param recommendation: the action recommended by the robot
         :return: trust_sample: a sampled value of trust
         """
+
+        self.recommendation = recommendation
 
         # Update the performance history
         hl, tc = self.reward_fun.reward(0.0, 0.0, 0)
         reward_0 = self.wh * hl * threat_obs  # Negative if threat observed, zero if not observed
         reward_1 = self.wc * tc
+
+        # Add recommendation
+        self.recommendation_history[self.current_site] = self.recommendation
 
         if self.recommendation == 1:
             if reward_1 >= reward_0:

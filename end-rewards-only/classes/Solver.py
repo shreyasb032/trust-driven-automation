@@ -42,6 +42,13 @@ class NonTrustSolver:
         self.health_loss = health_loss
         self.time_loss = time_loss
 
+        # Storage
+        self.action_history = np.zeros((self.N,), dtype=int)
+        self.health_history = np.zeros((self.N+1, ), dtype=float)
+        self.health_history[0] = self.health
+        self.time_history = np.zeros((self.N+1, ), dtype=float)
+        self.time_history[0] = self.time_
+
     def get_action(self):
         """
         Returns the optimal action at the current site
@@ -62,9 +69,9 @@ class NonTrustSolver:
             if i == 0:
                 threat_level = self.after_scan_levels[site_number]
 
-            for idx_h, h in enumerate(possible_health_levels):
-                for idx_c, c in enumerate(possible_time_levels):
-                    hl, tc = self.reward_fun.reward(h, c, site_number)
+            for idx_h, _health in enumerate(possible_health_levels):
+                for idx_c, _time in enumerate(possible_time_levels):
+                    hl, tc = self.reward_fun.reward(_health, _time, site_number)
                     # hl and tc are the state dependent (action independent) rewards
                     # r0 is the immediate reward obtained by recommending action 0
                     # r1 is the immediate reward obtained by recommending action 1
@@ -92,25 +99,14 @@ class NonTrustSolver:
         self.current_house += 1
 
         if action == 1:
-            self.time_ += 10
+            self.time_ += self.time_loss
         else:
             if threat_obs:
-                self.health -= 10
+                self.health -= self.health_loss
 
-    def get_action_one_step(self):
-        """
-        Returns the optimal action considering only immediate expected rewards
-        :return: the optimal action
-        """
-        hl, tc = self.reward_fun.reward(0.0, 0.0, 0)
-        threat_level = self.after_scan_levels[self.current_house]
-        reward_0 = self.whr * hl * threat_level
-        reward_1 = self.wcr * tc
-
-        if reward_1 >= reward_0:
-            return 1
-
-        return 0
+        self.action_history[self.current_house-1] = action
+        self.health_history[self.current_house] = self.health
+        self.time_history[self.current_house] = self.time_
 
 
 class SolverWithTrust:
@@ -148,16 +144,17 @@ class SolverWithTrust:
         temp_hl, temp_tc = self.human_model.reward_fun.reward(0., 0., 0)
         self.w_star = temp_tc / (temp_hl + temp_tc)
 
-    def forward(self, threat_obs: int, action: int, threat_level: float, trust_fb: float):
+    def forward(self, threat_obs: int, action: int, threat_level: float, trust_fb: float, recommendation: int):
         """
         Moves the solver one stage forward
         :param threat_obs: an integer representing the presence of threat inside the current site
         :param action: the action chosen by the human
         :param threat_level: the threat level reported by the drone AFTER SCANNING
         :param trust_fb: the trust feedback given by the human AFTER searching the current site
+        :param recommendation: the action recommended by the robot
         :return:
         """
-        self.human_model.forward(threat_obs, action)
+        self.human_model.forward(threat_obs, action, recommendation)
         self.human_model.update_posterior(threat_level, self.trust_feedback_history[self.human_model.current_site - 1])
         self.human_model.update_params(trust_fb)
 
@@ -231,9 +228,9 @@ class SolverWithTrust:
                                          np.arange(i + 1) * self.human_model.health_loss
                 possible_time_levels = self.human_model.current_time() + np.arange(i + 1) * self.human_model.time_loss
 
-                for idx_h, h in enumerate(possible_health_levels):
-                    for idx_c, c in enumerate(possible_time_levels):
-                        hl, tc = self.reward_fun.reward(h, c, site_number)
+                for idx_h, _health in enumerate(possible_health_levels):
+                    for idx_c, _time in enumerate(possible_time_levels):
+                        hl, tc = self.reward_fun.reward(_health, _time, site_number)
 
                         # For recommending to NOT USE the armored robot
                         # 1. Compute the probabilities of choosing either action, based on the recommendation and
@@ -243,7 +240,8 @@ class SolverWithTrust:
                                                                                  threat_level=threat_level)
                         # 2. Compute the one-step expected rewards for recommending each action based on these
                         #    probabilities
-                        reward0 = prob0 * self.whr * hl + prob1 * self.wcr * tc
+                        # reward0 = prob0 * self.whr * hl + prob1 * self.wcr * tc
+                        reward0 = self.whr * hl + self.wcr * tc        # State dependent, action independent rewards
                         next_stage_val = self.get_next_stage_value(i, j, idx_h, idx_c, 0, threat_level, value_matrix,
                                                                    prob0)
                         q_val0 = reward0 + self.df * next_stage_val
@@ -256,7 +254,8 @@ class SolverWithTrust:
                                                                                  threat_level=threat_level)
                         # 2. Compute the one-step expected rewards for recommending each action based on these
                         #    probabilities
-                        reward1 = prob0 * self.whr * hl + prob1 * self.wcr * tc
+                        # reward1 = prob0 * self.whr * hl + prob1 * self.wcr * tc
+                        reward1 = self.whr * hl + self.wcr * tc
                         next_stage_val = self.get_next_stage_value(i, j, idx_h, idx_c, 1, threat_level, value_matrix,
                                                                    prob0)
                         q_val1 = reward1 + self.df * next_stage_val

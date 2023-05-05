@@ -409,12 +409,9 @@ class DisuseBoundedRationalModel(HumanBase):
         """
 
         if first:
-            updated_params = self.params_updater.get_initial_guess(trust_fb)
+            self.trust_params = self.params_updater.get_initial_guess(trust_fb)
         else:
-            updated_params = self.params_updater.get_params(list(self.trust_params.values()),
-                                                            self.performance_history[self.current_site-1],
-                                                            trust_fb)
-        i = 0
-        for k in self.trust_params.keys():
-            self.trust_params[k] = updated_params[i]
-            i += 1
+            self.trust_params = self.params_updater.get_params(self.trust_params,
+                                                               self.performance_history[self.current_site-1],
+                                                               trust_fb,
+                                                               self.current_site)

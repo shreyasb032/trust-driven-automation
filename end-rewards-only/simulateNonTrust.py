@@ -6,7 +6,7 @@ The robot solves the MDP for maximizing the end-rewards according to the weights
 import numpy as np
 from classes.ThreatSetter import ThreatSetter
 from classes.Solver import NonTrustSolver
-from classes.Rewards import ConstantRewards, EndReward
+from classes.Rewards import EndReward
 
 
 def main():

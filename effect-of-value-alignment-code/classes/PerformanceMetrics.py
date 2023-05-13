@@ -23,8 +23,10 @@ class ImmediateObservedReward(PerformanceMetricBase):
         rewards = self.reward_fun.reward(health, time)
 
         # time_loss_reward and health_loss_reward return negative values
-        rew2follow = rec * self.reward_weights["time"] * rewards[1] + (1-rec) * self.reward_weights["health"] * threat * rewards[0]
-        rew2unfollow = (1-rec) * self.reward_weights["time"] * rewards[1] + rec * self.reward_weights["health"] * threat * rewards[0]
+        rew2follow = rec * self.reward_weights["time"] * rewards[1] + \
+                     (1-rec) * self.reward_weights["health"] * threat * rewards[0]
+        rew2unfollow = (1-rec) * self.reward_weights["time"] * rewards[1] + \
+                       rec * self.reward_weights["health"] * threat * rewards[0]
 
         if rew2follow >= rew2unfollow:
             return 1

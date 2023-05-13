@@ -1,6 +1,7 @@
 import numpy as np
 from classes.RewardFunctions import RewardsBase
 
+
 class Posterior:
 
     def __init__(self, kappa: float, stepsize: float, reward_fun: RewardsBase):

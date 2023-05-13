@@ -5,9 +5,23 @@ from numpy.random import beta
 from classes.RewardFunctions import RewardsBase
 from classes.PerformanceMetrics import PerformanceMetricBase
 
+
 class HumanBase:
+
+    """
+    Base model for the simulated human. Other classes should inherit from this class and implement their own functions
+    """
     
-    def __init__(self, params: List, reward_weights: Dict, reward_fun: RewardsBase, performance_metric: PerformanceMetricBase):
+    def __init__(self, params: List, reward_weights: Dict, reward_fun: RewardsBase,
+                 performance_metric: PerformanceMetricBase):
+        """
+        Initializes the human base class
+        :param params: the trust parameters associated with the human. List [alpha0, beta0, ws, wf]
+        :param reward_weights: the reward weights associated with the human. Dict with keys 'health' and 'time'
+        :param reward_fun: the reward function associated with this human. Must have the function reward(health, time)
+        :param performance_metric: the performance metric that returns the performance given the recommendation and
+                                    outcome
+        """
 
         # Initializing the params and trust
         self.params = copy(params)
@@ -87,6 +101,7 @@ class HumanBase:
 
         return beta(self._alpha, self._beta)
 
+
 class ReversePsychology(HumanBase):
     
     def __init__(self, params, reward_weights):
@@ -96,6 +111,7 @@ class ReversePsychology(HumanBase):
     def choose_action(self, rec, threat_level=None, health=None, time=None):
 
         return np.random.choice([rec, 1-rec], p=[self.trust, 1-self.trust])
+
 
 class Disuse(HumanBase):
     """Old Disuse Model: Accept recommendation with probability trust, choose the action which gives best 
@@ -117,6 +133,7 @@ class Disuse(HumanBase):
         r1 = self.reward_weights["time"] * self.time_loss_reward(time)
 
         return int(r0 < r1)
+
 
 class BoundedRational(HumanBase):
     """Bounded rationality with disuse model. Accepts recommendation with probability trust, 
@@ -147,12 +164,12 @@ class BoundedRational(HumanBase):
 
         return np.random.choice([0, 1], p=[p0, 1-p0])
 
+
 class AlwaysAccept(HumanBase):
     """Human model that always accepts the recommendation, regardless of the trust level"""
     
     def __init__(self, params):
         super().__init__(params)
-    
+
     def choose_action(self, rec):
         return rec
-

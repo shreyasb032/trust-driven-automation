@@ -1,5 +1,6 @@
 """Classes for keeping rewards consistent through the main code"""
 
+
 class RewardsBase:
 
     def __init__(self) -> None:
@@ -7,6 +8,7 @@ class RewardsBase:
     
     def reward(self, health, time, house):
         raise NotImplementedError
+
 
 class Constant:
     
@@ -17,6 +19,7 @@ class Constant:
     def reward(self, health=None, time=None, house=None):
         return (-self.hl, -self.tc)
 
+
 class Linear(RewardsBase):
 
     def __init__(self) -> None:
@@ -24,6 +27,7 @@ class Linear(RewardsBase):
     
     def reward(self, health, time, house=None):
         return (health, -time)
+
 
 class Affine(RewardsBase):
 
@@ -33,7 +37,8 @@ class Affine(RewardsBase):
     
     def reward(self, health, time, house=None):
 
-        return (health - self.max_health, -time)
+        return health - self.max_health, -time
+
 
 class Inverse(RewardsBase):
 
@@ -51,4 +56,4 @@ class Inverse(RewardsBase):
         h = -self.max_health / (health - self.min_health)
         c = -min(time, self.max_time)
 
-        return (h, c)
+        return h, c

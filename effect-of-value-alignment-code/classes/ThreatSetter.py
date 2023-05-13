@@ -1,9 +1,11 @@
 import numpy as np
 from numpy.random import default_rng
 
+
 class ThreatSetter:
     
-    def __init__(self, N=100, region_size=10, priors=[0.3, 0.8, 0.5, 0.5, 0.7, 0.2, 0.4, 0.5, 0.9, 0.6], k1=10., k2=10., scanner_accuracy = 0.8, seed=None):
+    def __init__(self, N=100, region_size=10, priors=[0.3, 0.8, 0.5, 0.5, 0.7, 0.2, 0.4, 0.5, 0.9, 0.6],
+                 k1=10., k2=10., scanner_accuracy=0.8, seed=None):
 
         assert N // region_size == len(priors), "Length of priors does not match the region size"
 
@@ -100,12 +102,14 @@ class ThreatSetter:
 
             self.after_scan[i] = rng.beta(self.k2 * self.danger_levels[i], self.k2 * (1.-self.danger_levels[i]))
 
+
 def main():
     setter = ThreatSetter()
     setter.setThreats()
     
     for i in range(setter.N):
         print(setter.threats[i], setter.priors[i//setter.region_size], setter.after_scan[i])
-    
+
+
 if __name__ == "__main__":
     main()

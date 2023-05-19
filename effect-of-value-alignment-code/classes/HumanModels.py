@@ -45,16 +45,30 @@ class HumanBase:
         self.performance_history = []
     
     def set_params(self, params):
+        """
+        Updates the trust parameters of the human
+        :param params: the trust parameters list [alpha0, beta0, ws, wf]
+        """
         self.params = copy(params)
         
     def reset(self):
+        """
+        Resets the human model. NOT SURE WHY I AM NOT CLEARING THE PERFORMANCE HISTORY HERE.
+        """
         self.params = copy(self.init_params)
         self.trust = self.params[0] / (self.params[0] + self.params[1])
         self._alpha = self.params[0]
         self._beta = self.params[1]
     
     def update_trust(self, rec, threat, threat_level, health=100, time=0):
-        """Update trust based on immediate actual reward"""
+        """Update trust based on immediate observed reward
+        :param rec: recommendation given to the human
+        :param threat: integer representing the presence of threat
+        :param threat_level: a float representing the level of threat
+        :param health: the current health level of the soldier
+        :param time: the time spent in the mission"""
+
+        perf = None
 
         if self.performance_metric.idx == 1:
             perf = self.performance_metric.get_performance(rec, health, time, threat)
@@ -71,11 +85,19 @@ class HumanBase:
         self.trust = self._alpha / (self._alpha + self._beta)
 
     def get_last_performance(self):
+        """Returns the last value in the maintained performance history"""
         return self.performance_history[-1]
 
     def get_immediate_reward(self, health, time, action, threat):
+        """
+        Helper function to return the immediate observed reward for the given action
+        :param health: the current health level of the soldier
+        :param time: the time spent in the mission
+        :param action: the action chosen/recommended
+        :param threat: an integer representing the presence of threat
+        """
 
-        hl, tc = self.reward_fun.reward(health, time)
+        hl, tc = self.reward_fun.reward(health, time, house=None)
 
         r1 = self.reward_weights["time"] * tc
         r2 = self.reward_weights["health"] * hl
@@ -94,10 +116,12 @@ class HumanBase:
         return r
     
     def get_mean(self):
+        """Returns the mean level of trust"""
 
         return self.trust
     
     def get_feedback(self):
+        """Samples trust from the beta distribution"""
 
         return beta(self._alpha, self._beta)
 

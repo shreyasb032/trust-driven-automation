@@ -9,10 +9,20 @@ class Estimator:
 
     def __init__(self, num_iterations=1000, stepsize=0.0001, use_prior=True,
                  query_feedback_at=None, error_tol=0.01):
+        """
+        Initializer of the Estimator class
+        :param num_iterations: maximum number of iterations of gradient descent to run before stopping
+        :param stepsize: the stepsize for the gradient descent algorithm
+        :param use_prior: whether to use the prior for estimating the trust parameters
+        :param query_feedback_at: a list of site numbers at which feedback was queried (default: None, which indicates
+                                    that feedback was asked after every site)
+        :param error_tol: the error below which we stop the gradient descent algorithm
+        """
 
+        self.prior = None
         self.MAX_ITER = num_iterations
         self.stepsize = stepsize
-        self.definePrior()
+        self.define_prior()
         self.use_prior = use_prior
         self.error_tol = error_tol
 
@@ -34,10 +44,16 @@ class Estimator:
         self.query_feedback_at = query_feedback_at
 
     def reset(self):
+        """
+        Resets the estimator
+        """
         self.performance.clear()
         self.feedback.clear()
 
-    def definePrior(self):
+    def define_prior(self):
+        """
+        Helper function to define the prior over the trust parameters
+        """
 
         prior = {"AlphaEdges": np.array([0, 28, 56, 84, 112, 140]),
                  "AlphaValues": np.array([0.2051, 0.1538, 0.07692, 0.2308, 0.3333]),
@@ -50,20 +66,29 @@ class Estimator:
 
         self.prior = prior
 
-    def getInitialGuess(self, feedback):
+    def get_initial_guess(self, feedback):
+        """
+        Get a good initial guess to start the gradient descent algorithm.
+        The guess is chosen from a list to best estimate the initial value of trust given by the human
+        :param feedback: the initial trust feedback given by the human
+        """
 
         t = round(feedback * 10) / 10
         guess_params = self.gp_list[t].copy()
 
         return guess_params
 
-    def getParams(self, initial_guess, p, t):
+    def get_params(self, initial_guess, performance, trust):
 
-        """initial_guess = the guess from which the gradient descent is begun at this stage
-           performance = The performance of the drone at the current site.
-           feedback = The trust feedback of the participant at the current site.
-           query_feedback_at = a list to artificially control the stages at which the feedback is to be used in the estimation"""
+        """
+        Function to get the updated list of trust parameters
+        :param initial_guess: the guess from which the gradient descent is begun at this stage
+        :param performance: The performance of the drone at the current site.
+        :param trust: The trust feedback of the participant at the current site.
+        """
 
+        p = performance
+        t = trust
         self.performance.append(p)
         self.feedback.append(t)
 
@@ -72,24 +97,28 @@ class Estimator:
         lr = np.array([factor, factor, factor / curr_house, factor / curr_house])
 
         guess_params = initial_guess.copy()  # To keep using current parameters as the initial guess
-        # guess_params = self.getInitialGuess(performance[0], feedback[0])   # To use a new initial guess every time
+        # guess_params = self.get_initial_guess(performance[0], feedback[0])   # To use a new initial guess every time
 
         if self.query_feedback_at is not None:
             if len(self.performance) - 1 not in self.query_feedback_at:
                 return initial_guess
 
-        gradients_except_prior = self.getGrads(guess_params)
+        gradients_except_prior = self.get_grads(guess_params)
         num_iters = 0
 
         while norm(gradients_except_prior) > self.error_tol and num_iters < self.MAX_ITER:
             num_iters += 1
-            gradients_except_prior = self.getGrads(guess_params)
+            gradients_except_prior = self.get_grads(guess_params)
             guess_params += lr * gradients_except_prior
             guess_params[guess_params <= 0.1] = 0.1  # To make sure the digamma function behaves well
 
         return guess_params
 
-    def getGrads(self, params):
+    def get_grads(self, params):
+        """
+        Returns the gradients of the log-likelihood function using a digamma approximation
+        :param params: the trust parameters at which to evaluate the gradients
+        """
 
         grads = np.zeros((4,))
         alpha_0 = params[0]
@@ -102,7 +131,7 @@ class Estimator:
 
         for i in range(len(self.feedback)):
 
-            # We need to add the number of successes and failures reagrdless of whether feedback was queried or not
+            # We need to add the number of successes and failures regardless of whether feedback was queried or not
             ns += self.performance[i]
             nf += 1 - self.performance[i]
 
@@ -165,6 +194,9 @@ class Estimator:
 
 
 def digamma(x):
+    """
+    An approximation to the digamma function
+    """
     a = 1 / sqrt(6)
     b = 6 - 2 * sqrt(6)
 

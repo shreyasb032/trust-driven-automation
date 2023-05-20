@@ -2,7 +2,7 @@ import numpy as np
 from classes.HumanModels import AlwaysAccept, BoundedRational
 from classes.ThreatSetter import ThreatSetter
 from classes.IRLModel import Posterior
-from classes.POMDPSolver import Solver, SolverOnlyEndReward
+from classes.POMDPSolver import Solver
 from classes.RewardFunctions import Affine
 
 def updateSolver(solver : Solver, setter: ThreatSetter):

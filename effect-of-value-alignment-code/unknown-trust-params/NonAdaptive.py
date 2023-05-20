@@ -2,7 +2,7 @@
 The weights of the objective function of the robot are fixed. 
 Further, the true trust parameters of the human are not known a priori. They are updated using gradient descent after receiving trust feedback"""
 
-import numpy as np
+
 import _context
 from classes.Utils import *
 from classes.POMDPSolver import SolverConstantRewardsNew
@@ -86,8 +86,9 @@ class NonAdaptiveRobot:
         else:
             perf_metric = ImmediateExpectedReward(human_weights, reward_fun)
 
-        human = BoundedRational(trust_params, human_weights, reward_fun=reward_fun, kappa=1.0, perf_metric=perf_metric)
-                
+        human = BoundedRational(trust_params, human_weights, reward_fun=reward_fun, kappa=1.0,
+                                performance_metric=perf_metric)
+
         # THINGS TO LOOK FOR AND STORE AND PLOT/PRINT
         # Trust, posterior after every interaction, health, time, recommendation, action
         # # Initialize storage
@@ -127,7 +128,7 @@ class NonAdaptiveRobot:
             # priors = rng.random(N // region_size)
             priors = [threat_level] * int(N / region_size)
             threat_setter = ThreatSetter(N, region_size, seed=seed+j, priors=priors)
-            threat_setter.setThreats()
+            threat_setter.set_threats()
             priors = threat_setter.priors
             after_scan = threat_setter.after_scan
             prior_levels = np.zeros_like(after_scan)
@@ -160,7 +161,7 @@ class NonAdaptiveRobot:
 
             if j == 0:
                 # Get an initial guess on the parameters based on this feedback
-                initial_guess = estimator.getInitialGuess(trust_feedback[j, 0])
+                initial_guess = estimator.get_initial_guess(trust_feedback[j, 0])
 
                 # Set the solver's trust params to this initial guess
                 solver.update_params(initial_guess)
@@ -211,7 +212,7 @@ class NonAdaptiveRobot:
                 trust_feedback[j, i+1] = trust_fb_after
 
                 # Update trust parameters
-                opt_params = estimator.getParams(solver.trust_params, solver.get_last_performance(), trust_fb_after)
+                opt_params = estimator.get_params(solver.trust_params, solver.get_last_performance(), trust_fb_after)
                 solver.update_params(opt_params)
                 parameter_estimates[j, i+1, :] = np.array(opt_params)
 

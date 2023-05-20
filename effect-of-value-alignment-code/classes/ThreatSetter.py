@@ -3,13 +3,30 @@ from numpy.random import default_rng
 
 
 class ThreatSetter:
-    
-    def __init__(self, N=100, region_size=10, priors=[0.3, 0.8, 0.5, 0.5, 0.7, 0.2, 0.4, 0.5, 0.9, 0.6],
+    """
+    Class to set all threat levels: prior_levels, after_scan_levels, and threats
+    """
+    def __init__(self, num_sites=100, region_size=10, priors=None,
                  k1=10., k2=10., scanner_accuracy=0.8, seed=None):
+        """
+        :param num_sites: number of sites in the mission
+        :param region_size: size of a region with the same prior level of threat
+        :param priors: the prior threat level of a region. The length of this list should be equal
+                    to num_sites // region_size
+        ;param k1: the parameter for setting prior threat levels
+        :param k2: the parameter for setting after scan threat levels
+        :param scanner_accuracy: accuracy of the scanner of the drone
+        :param seed: the seed for the random number generator
+        """
 
-        assert N // region_size == len(priors), "Length of priors does not match the region size"
+        self.after_scan = None
+        self.danger_levels = None
+        self.threats = None
+        if priors is None:
+            priors = [0.3, 0.8, 0.5, 0.5, 0.7, 0.2, 0.4, 0.5, 0.9, 0.6]
+        assert num_sites // region_size == len(priors), "Length of priors does not match the region size"
 
-        self.N = N
+        self.N = num_sites
         self.region_size = region_size
         self.num_regions = int(self.N // self.region_size)
         
@@ -30,14 +47,17 @@ class ThreatSetter:
         
         self.seed = seed
 
-    def setThreats(self):
+    def set_threats(self):
+        """
+        Sets all threat levels (prior levels, after scan levels, threat presence)
+        """
         # We have priors. We can set danger levels around these priors (Beta distribution should work)
         # Threat presence should be dependent on the danger levels
         # After scan threat levels should be close to the actual presence of threats
         
-        self.setDangerLevels()
+        self.set_danger_levels()
         
-        # Setting the acutal presence of threats based on the generated noisy danger level data
+        # Setting the actual presence of threats based on the generated noisy danger level data
         self.threats = np.zeros((self.N,), dtype=int)
 
         if self.seed is not None:
@@ -52,9 +72,14 @@ class ThreatSetter:
             else:
                 self.threats[i] = 0
         
-        self.setAfterScanLevels()
+        self.set_after_scan_levels()
     
-    def setDangerLevels(self):
+    def set_danger_levels(self):
+        """
+        Sets danger levels according to the prior list. Essentially adds some randomness to the regions' prior
+        threat level value
+        """
+
         self.danger_levels = np.zeros((self.N,))
         
         if self.seed is not None:
@@ -74,8 +99,10 @@ class ThreatSetter:
             else:
                 self.danger_levels[i:i+self.region_size] = rng.beta(self.k1 * prior, self.k1 * (1 - prior), self.region_size)
         
-    def setAfterScanLevels(self):
-        
+    def set_after_scan_levels(self):
+        """
+        Helper function to set the after scan threat level values
+        """
         # The robot scans and gets a value of probability of threat from sensor readings
         # This is updated by multiplying by the prior probability of threat presence
         self.after_scan = np.zeros_like(self.danger_levels)
@@ -87,25 +114,15 @@ class ThreatSetter:
         
         for i in range(self.N):
 
-            # saying that there is a threat = accuracy * threat + (1 - accuracy)*(1-threat)
-            # saying that there is not a threat = (1-accuracy) * threat + accuracy * (1 - threat)
-            
-            # threat_scanned = self.scanner_accuracy * self.threats[i] + (1. - self.scanner_accuracy) * (1 - self.threats[i])
-            # nothreat_scanned = 1.0 - threat_scanned
-
-            # if nothreat_scanned == 0 or nothreat_scanned == 1:
-            #     # Debugging case, when the scanner accuracy is 100%, we detect all threats correctly, with 100% probability
-            #     self.after_scan[i] = threat_scanned
-            # else:
-            #     # Add noise around these values and use the prior to get the posterior
-            #     self.after_scan[i] = rng.beta(self.k2 * threat_scanned, self.k2 * nothreat_scanned) #* self.priors[i//self.region_size]
-
             self.after_scan[i] = rng.beta(self.k2 * self.danger_levels[i], self.k2 * (1.-self.danger_levels[i]))
 
 
 def main():
+    """
+    Main function is for debugging.
+    """
     setter = ThreatSetter()
-    setter.setThreats()
+    setter.set_threats()
     
     for i in range(setter.N):
         print(setter.threats[i], setter.priors[i//setter.region_size], setter.after_scan[i])

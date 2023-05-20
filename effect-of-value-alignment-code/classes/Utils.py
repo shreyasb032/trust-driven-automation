@@ -102,7 +102,11 @@ def add_common_args(parser: argparse.ArgumentParser):
     parser.add_argument('--hl', type=float, help="Health loss cost (default: 10.0)", default=10.0)
     parser.add_argument('--tc', type=float, help="Time loss cost (default: 10.0)", default=10.0)
     
-    parser.add_argument('--threat-level', type=float, help='Common Threat Level to set across all houses (default:0.7)', default=0.7)
+    parser.add_argument('--threat-level',
+                        type=float,
+                        help='Common Threat Level to set across all houses (default:0.7)',
+                        default=0.7)
+
     # parser.add_argument('--use-constant-threats', type=bool,
     # help='Flag to set whether there is any randomization in threat levels or not (default: True)', default=True)
     
@@ -142,7 +146,7 @@ def col_print(table_data):
         print(string.format(*row))
 
 
-class simParams:
+class SimParams:
 
     def __init__(self):
 

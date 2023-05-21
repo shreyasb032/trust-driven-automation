@@ -1,11 +1,23 @@
 import numpy as np
 from numpy.random import default_rng
 
-class ThreatSetter:
-    
-    def __init__(self, N=40, prior=0.3, seed=None):
 
-        self.N = N
+class ThreatSetter:
+    """
+    Class to set all threat levels: prior_levels, after_scan_levels, and threats
+    """
+    
+    def __init__(self, num_sites=40, prior=0.3, seed=None):
+        """
+        :param num_sites: number of sites in the mission
+        :param prior: the prior threat level at any of the search sites
+        :param seed: a seed for the rng
+        """
+
+        self.after_scan = None
+        self.threats = None
+        self.rng = None
+        self.N = num_sites
         self.prior_single = prior        
 
         # Initialize the repeated priors list
@@ -13,12 +25,12 @@ class ThreatSetter:
 
         self.seed = seed
 
-    def setThreats(self):
-        # We have priors. We can set danger levels around these priors (Beta distribution should work)
-        # Threat presence should be dependent on the danger levels
-        # After scan threat levels should be close to the actual presence of threats
+    def set_threats(self):
+        """
+        Sets all threat levels (prior levels, after scan levels, threat presence)
+        """
 
-        # Setting the acutal presence of threats based on the generated noisy danger level data
+        # Setting the actual presence of threats based on the generated noisy danger level data
         self.threats = np.zeros((self.N,), dtype=int)
 
         if self.seed is not None:
@@ -28,9 +40,12 @@ class ThreatSetter:
 
         self.threats = self.rng.binomial(1, self.prior_single, size=self.N)
 
-        self.setAfterScanLevels()
+        self.set_after_scan_threat_levels()
         
-    def setAfterScanLevels(self):
+    def set_after_scan_threat_levels(self):
+        """
+        Helper function to set the after scan threat level values
+        """
 
         self.after_scan = np.zeros_like(self.prior)
 
@@ -44,12 +59,17 @@ class ThreatSetter:
                 self.after_scan[i] = self.rng.beta(28, 4)      # This ensures that the mode of the distribution is at 0.9
                 # self.after_scan[i] = self.rng.uniform(0.7, 1.0)
 
+
 def main():
+    """
+    Main function is for debugging
+    """
     setter = ThreatSetter()
-    setter.setThreats()
+    setter.set_threats()
 
     for i in range(setter.N):
         print(setter.threats[i], setter.prior[i], setter.after_scan[i])
-    
+
+
 if __name__ == "__main__":
     main()

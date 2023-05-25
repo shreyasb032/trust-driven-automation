@@ -3,14 +3,13 @@ from classes.DataReader import PickleReader
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 from os import path, walk
-from Utils import col_print
 import json
 import datetime
 from scipy.stats import beta
 import seaborn as sns
 sns.set_theme(style='white', context='paper')
+
 
 def analyze(parent_direc: str):
 

@@ -2,11 +2,11 @@ import argparse
 import _context
 from Utils import add_common_args
 from NonAdaptive import NonAdaptiveRobot
-#from Adaptive import AdaptiveRobot
-#from APriorAlignment import APrioriAlignedRobot
 import time
 
+
 def main():
+
     parser = argparse.ArgumentParser()
     parser = add_common_args(parser)
     
@@ -24,7 +24,7 @@ def main():
     
     wh_list = [wh_start + stepsize * i for i in range(num_weights)]
     wh_list_all = [stepsize * i for i in range(int(1/stepsize) + 1)]
-    data_direc_base = "./data/ThreatLevel/{:1.1f}/wh_start_{:1.1f}/".format(args.threat_level, args.wh_start)
+    data_direc_base = "./data/ThreatLevel/ReversePsych/{:1.1f}/wh_start_{:1.1f}/".format(args.threat_level, args.wh_start)
 
     for wh_rob in wh_list_all:
         args.health_weight_robot = wh_rob
@@ -33,6 +33,7 @@ def main():
             args.health_weight_human = wh_hum
             nar = NonAdaptiveRobot(args)
             nar.run(data_direc)
+
 
 if __name__ == "__main__":
     main()

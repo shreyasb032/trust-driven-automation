@@ -11,12 +11,13 @@ from mpl_toolkits.mplot3d import Axes3D
 from copy import copy
 import datetime
 
+
 def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
 
     # Most shapes are (num_simulations, num_missions, num_sites or num_sites+1)    
 
     # Step 1: Accumulate data
-    
+
     # Get the list of subdirectories
     direc_list = []
     for root, dirs, _ in walk(parent_direc):
@@ -91,7 +92,8 @@ def main(args: argparse.Namespace):
     wh_rob = args.wh_rob
     analyze(parent_direc, wh_rob, wh_hum)
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Exploring the stored simulated data')
     parser.add_argument('--path', type=str, help="Path to the parent directory of the data to be analysed")

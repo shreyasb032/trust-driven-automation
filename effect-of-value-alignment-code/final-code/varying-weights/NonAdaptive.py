@@ -4,11 +4,10 @@ The weights of the objective function of the robot are fixed.
 Further, the true trust parameters of the human are not known a priori. They are updated using gradient descent after
 receiving trust feedback"""
 
-import numpy as np
 import _context
 from Utils import *
 from classes.POMDPSolver import SolverConstantRewardsNew
-from classes.HumanModels import BoundedRational
+from classes.HumanModels import BoundedRational, ReversePsychology
 from classes.IRLModel import Posterior
 from classes.ThreatSetter import ThreatSetter
 from classes.RewardFunctions import Constant
@@ -62,7 +61,11 @@ class NonAdaptiveRobot:
         wc_rob = 1. - wh_rob
         est_human_weights = {'health': None, 'time': None}
         rob_weights = {'health': wh_rob, 'time': wc_rob, 'trust': wt_rob}
-        solver = SolverConstantRewardsNew(N, rob_weights, trust_params.copy(), None, None, None, est_human_weights, hum_mod='bounded_rational', reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
+        solver = SolverConstantRewardsNew(N,
+                                          rob_weights,
+                                          trust_params.copy(), None, None, None,
+                                          est_human_weights, hum_mod='rev_psych',
+                                          reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
 
         # Intialize posterior
         posterior = Posterior(kappa=kappa, stepsize=stepsize, reward_fun=reward_fun)
@@ -78,8 +81,9 @@ class NonAdaptiveRobot:
         else:
             perf_metric = ImmediateExpectedReward(human_weights, reward_fun)
 
-        human = BoundedRational(trust_params, human_weights, reward_fun=reward_fun, kappa=1.0, perf_metric=perf_metric)
-                
+        # human = BoundedRational(trust_params, human_weights, reward_fun=reward_fun, kappa=1.0, perf_metric=perf_metric)
+        human = ReversePsychology(trust_params, human_weights, reward_fun, perf_metric)
+
         # THINGS TO LOOK FOR AND STORE AND PLOT/PRINT
         # Trust, posterior after every interaction, health, time, recommendation, action
         # # Initialize storage
@@ -111,7 +115,7 @@ class NonAdaptiveRobot:
 
         # Initialize threats
         threat_setter = ThreatSetter(N, prior=threat_level, seed=seed)
-        threat_setter.setThreats()
+        threat_setter.set_threats()
         prior = threat_setter.prior
         after_scan = threat_setter.after_scan
         threats = threat_setter.threats
@@ -123,12 +127,12 @@ class NonAdaptiveRobot:
         trust_feedback[0] = human.get_feedback()
 
         # Get an initial guess on the parameters based on this feedback
-        initial_guess = estimator.getInitialGuess(trust_feedback[0])
+        initial_guess = estimator.get_initial_guess(trust_feedback[0])
 
         # Set the solver's trust params to this initial guess
         solver.update_params(initial_guess)
 
-        trust_estimate[0] = solver.get_trust_estimate(0)
+        trust_estimate[0] = solver.get_trust_estimate()
 
         # For each site, get recommendation, choose action, update health, time, trust, posterior
         for i in range(N):
@@ -165,7 +169,7 @@ class NonAdaptiveRobot:
 
             # Use the old values of health and time to compute the performance
             solver.forward(i, rec, posterior)
-            trust_est_after = solver.get_trust_estimate(i+1)
+            trust_est_after = solver.get_trust_estimate()
             trust_estimate[i+1] = trust_est_after
 
             # Update trust (based on old values of health and time)
@@ -174,18 +178,18 @@ class NonAdaptiveRobot:
             trust_feedback[i+1] = trust_fb_after
 
             # Update trust parameters
-            opt_params = estimator.getParams(solver.trust_params, solver.get_last_performance(i), trust_fb_after)
+            opt_params = estimator.get_params(solver.trust_params, solver.get_last_performance(), trust_fb_after)
             solver.update_params(opt_params)
             parameter_estimates[i+1, :] = np.array(opt_params)
 
             # Storage
-            perf_est[i] = solver.get_last_performance(i)
+            perf_est[i] = solver.get_last_performance()
             perf_actual[i] = human.get_last_performance()
 
             if PRINT_FLAG:
                 # Store stuff
                 row = []
-                row.append("{:.2f}".format(threat_setter.prior_levels[i]))
+                row.append("{:.2f}".format(threat_setter.prior[i]))
                 row.append("{:.2f}".format(threat_setter.after_scan[i]))
                 row.append(str(rec))
                 row.append(str(action))

@@ -24,15 +24,16 @@ def main():
     
     wh_list = [wh_start + stepsize * i for i in range(num_weights)]
     wh_list_all = [stepsize * i for i in range(int(1/stepsize) + 1)]
-    data_direc_base = "./data/ThreatLevel/ReversePsych/{:1.1f}/wh_start_{:1.1f}/".format(args.threat_level, args.wh_start)
+    parent_directory = "./data/ReversePsych/{:1.1f}/wh_start_{:1.2f}/".format(args.threat_level,
+                                                                              args.wh_start)
 
     for wh_rob in wh_list_all:
         args.health_weight_robot = wh_rob
         for wh_hum in wh_list:
-            data_direc = data_direc_base + time.strftime("%Y%m%d-%H%M%S") + '/'
+            timestamp = time.strftime("%Y%m%d-%H%M%S") + '/'
             args.health_weight_human = wh_hum
             nar = NonAdaptiveRobot(args)
-            nar.run(data_direc)
+            nar.run(parent_directory, timestamp)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ import datetime
 import seaborn as sns
 sns.set_theme(style='white', context='paper')
 
+
 def analyze(parent_direc: str, region: int):
 
     # Most shapes are (num_simulations, num_sites or num_sites+1)
@@ -109,17 +110,23 @@ def analyze(parent_direc: str, region: int):
 
     plt.show()
 
+
 def main(args: argparse.Namespace):
 
-    # parent_direc = './data/ThreatLevel/0.7/'
+    # parent_direc = './data/ThreatLevel(OldData)/0.7/'
     parent_direc = args.path
     region = args.region
     analyze(parent_direc, region)   
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Exploring the stored simulated data')
     parser.add_argument('--path', type=str, help="Path to the parent directory of the data to be analysed")
-    parser.add_argument('--region', type=int, help='The region of trust to plot (0 - all regions, 1 - both do not care about health, 2 - human does not care about health,robot does, 3 - human cares about health, robot does not, 4 - both care about health) (default:0)', default=0)
+    parser.add_argument('--region', type=int, help='The region of trust to plot (0 - all regions, '
+                                                   '1 - both do not care about health, '
+                                                   '2 - human does not care about health,robot does, '
+                                                   '3 - human cares about health, robot does not, '
+                                                   '4 - both care about health) (default:0)', default=0)
     args = parser.parse_args()
     main(args)

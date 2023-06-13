@@ -23,7 +23,7 @@ def main():
     num_levels = int((d_end-d_start)/stepsize) + 1
     
     d_list = [d_start + stepsize * i for i in range(num_levels)]
-    data_direc_base = "./data/FixedWeights/rob{:1.1f}/hum{:1.1f}/".format(args.health_weight_robot, args.health_weight_human)
+    data_direc_base = "./data/FixedWeights/ReversePsych/rob{:1.1f}/hum{:1.1f}/".format(args.health_weight_robot, args.health_weight_human)
 
     for d in d_list:
         data_direc = data_direc_base + time.strftime("%Y%m%d-%H%M%S") + '/'

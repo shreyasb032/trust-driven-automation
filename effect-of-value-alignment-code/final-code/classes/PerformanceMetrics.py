@@ -3,6 +3,7 @@ from classes.RewardFunctions import RewardsBase
 
 
 class PerformanceMetricBase:
+
     def __init__(self, idx: int = None):
         """
         Base class. Other classes should inherit from this class and implement the methods below.
@@ -52,10 +53,7 @@ class ImmediateObservedReward(PerformanceMetricBase):
         rew2unfollow = (1 - rec) * self.reward_weights["time"] * rewards[1] + \
                        rec * self.reward_weights["health"] * threat * rewards[0]
 
-        if rew2follow >= rew2unfollow:
-            return 1
-
-        return 0
+        return int(rew2follow >= rew2unfollow)
 
 
 class ImmediateExpectedReward(PerformanceMetricBase):
@@ -89,7 +87,4 @@ class ImmediateExpectedReward(PerformanceMetricBase):
         rew2unfollow = (1 - rec) * self.reward_weights["time"] * rewards[1] + rec * self.reward_weights[
             "health"] * threat * rewards[0]
 
-        if rew2follow >= rew2unfollow:
-            return 1
-
-        return 0
+        return int(rew2follow >= rew2unfollow)

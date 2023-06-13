@@ -6,9 +6,9 @@ def add_common_args(parser: argparse.ArgumentParser):
     parser.add_argument('--trust-weight', type=float,
                         help='trust weight for the robot (default: 0.0)',
                         default=0.0)
-    parser.add_argument('--kappa', type=float, help='rationality coeffiecient (default: 0.2)', default=0.2)
+    parser.add_argument('--kappa', type=float, help='rationality coefficient (default: 0.2)', default=0.2)
     parser.add_argument('--trust-params', nargs=4, help='Trust parameters for the human, default=[90., 30., 20., 30.]',
-                        default=[90., 30., 20., 30.])
+                        default=[60., 60., 10., 20.])
     parser.add_argument('--num-sites', type=int, help='Number of sites in a mission (default: 40)', default=40)
     parser.add_argument('--num-missions', type=int, help='Number of missions (default: 1)', default=1)
     parser.add_argument('--print-flag', type=bool, help="Flag to print the data to output (default: False)",

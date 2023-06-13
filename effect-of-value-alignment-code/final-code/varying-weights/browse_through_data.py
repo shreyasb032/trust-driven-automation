@@ -56,15 +56,15 @@ def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
         reader = PickleReader(data_file)
         reader.read_data()
         data = reader.data
-        trust_fb = data['trust feedback'][0, 0, :-1]
-        trust_est = data['trust estimate'][0, 0, :-1]
-        recs = data['recommendation'][0,0,:]
-        acts = data['actions'][0,0,:]
-        ds = data['after scan level'][0,0,:]
-        threats = data['threat'][0,0,:]
-        perf_est = data['performance estimates'][0,0,:]
-        perf_act = data['performance actual'][0,0,:]
-        wh_mean = data['mean health weight'][0,0,1:]
+        trust_fb = data['trust feedback'][0, :-1]
+        trust_est = data['trust estimate'][0, :-1]
+        recs = data['recommendation'][0,:]
+        acts = data['actions'][0,:]
+        ds = data['after scan level'][0,:]
+        threats = data['threat'][0,:]
+        perf_est = data['performance estimates'][0,:]
+        perf_act = data['performance actual'][0,:]
+        wh_mean = data['mean health weight'][0,1:]
 
         for fb, est, rec, act, d, threat, pe, pa, wh in zip(trust_fb, trust_est, recs, acts, ds, threats, perf_est, perf_act, wh_mean):
             row = []
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Exploring the stored simulated data')
     parser.add_argument('--path', type=str, help="Path to the parent directory of the data to be analysed")
-    parser.add_argument('--wh-hum', type=float, help='Health weight of the human to explore (default: 0.8)', default=0.1)
-    parser.add_argument('--wh-rob', type=float, help='Health weight of the robot to explore (default: 0.8)', default=0.9)
+    parser.add_argument('--wh-hum', type=float, help='Health weight of the human to explore (default: 0.8)', default=0.8)
+    parser.add_argument('--wh-rob', type=float, help='Health weight of the robot to explore (default: 0.8)', default=0.8)
     args = parser.parse_args()
     main(args)

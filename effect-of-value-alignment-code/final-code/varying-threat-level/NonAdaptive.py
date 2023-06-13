@@ -5,8 +5,8 @@ Further, the true trust parameters of the human are not known a priori. They are
 import numpy as np
 import _context
 from Utils import *
-from classes.POMDPSolver import SolverConstantRewardsNew
-from classes.HumanModels import BoundedRational
+from classes.POMDPSolver import SolverConstantRewards
+from classes.HumanModels import BoundedRational, ReversePsychology
 from classes.IRLModel import Posterior
 from classes.ThreatSetter import ThreatSetter
 from classes.RewardFunctions import Constant
@@ -18,6 +18,7 @@ import pickle
 from tqdm import tqdm
 import json
 
+
 class NonAdaptiveRobot:
     
     def __init__(self, args: argparse.Namespace) -> None:
@@ -26,17 +27,25 @@ class NonAdaptiveRobot:
     def run_one_simulation(self, seed: int):
 
         args = self.args
-        # Output data: Trust feedback, trust estimation, posterior distribution, weights, healths, times, recommendations, actions
+        # Output data: Trust feedback, trust estimation, posterior distribution, weights,
+        # healths, times, recommendations, actions
         data = {}
 
-        ############################################# PARAMETERS THAT CAN BE MODIFIED ##################################################
-        wh_rob = args.health_weight_robot           # Fixed health weight of the robot
-        wt_rob = args.trust_weight                  # Trust increase reward weight
-        kappa = args.kappa                          # Assumed rationality coefficient in the bounded rationality model
-        stepsize = args.posterior_stepsize          # Stepsize in the posterior
-        wh_hum = args.health_weight_human           # True health weight of the human. time weight = 1 - health weight
-        trust_params = args.trust_params            # Human's true trust parameters in the beta distribution model [alpha_0, beta_0, ws, wf]. These are known by the robot
-        N = args.num_sites                          # Number of sites in a mission (Horizon for planning)
+        trust_params_dict = {0: [30., 90., 10., 20.],
+                             1: [60., 60., 10., 20.],
+                             2: [90., 30., 10., 20.]}
+
+        # PARAMETERS THAT CAN BE MODIFIED
+        wh_rob = args.health_weight_robot             # Fixed health weight of the robot
+        wt_rob = args.trust_weight                    # Trust increase reward weight
+        kappa = args.kappa                            # Assumed rationality coefficient in the bounded rationality model
+        stepsize = args.posterior_stepsize            # Stepsize in the posterior
+        wh_hum = args.health_weight_human             # True health weight of the human. time weight = 1 - health weight
+        trust_params_idx = args.trust_params          # Human's true trust parameters in the beta distribution model
+        trust_params = trust_params_dict[trust_params_idx]
+        num_sites = args.num_sites                    # Number of sites in a mission (Horizon for planning)
+        human_model_solver = args.human_model_solver  # The human model to be used by the solver
+        human_model_actual = args.human_model_actual  # The human model to simulate the human
 
         # For the threat setter
         threat_level = args.threat_level
@@ -50,16 +59,18 @@ class NonAdaptiveRobot:
         num_iterations = args.num_gradient_steps
         gradient_stepsize = args.gradient_stepsize
         err_tol = args.tolerance
-        use_prior = args.use_prior
-        estimator = Estimator(num_iterations, gradient_stepsize, error_tol=err_tol, use_prior=use_prior)
+        estimator = Estimator(num_iterations, gradient_stepsize, error_tol=err_tol, num_sites=num_sites)
 
         PRINT_FLAG = args.print_flag     # Flag to decide whether to print the data to the console output
-        #################################################################################################################################
+        #############################################################################################################
 
         wc_rob = 1. - wh_rob
         est_human_weights = {'health': None, 'time': None}
         rob_weights = {'health': wh_rob, 'time': wc_rob, 'trust': wt_rob}
-        solver = SolverConstantRewardsNew(N, rob_weights, trust_params.copy(), None, None, None, est_human_weights, hum_mod='bounded_rational', reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
+        solver = SolverConstantRewards(num_sites, rob_weights, trust_params.copy(), None, None, None,
+                                       est_human_weights,
+                                       hum_mod='rev_psych',
+                                       reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
 
         # Intialize posterior
         posterior = Posterior(kappa=kappa, stepsize=stepsize, reward_fun=reward_fun)
@@ -75,28 +86,37 @@ class NonAdaptiveRobot:
         else:
             perf_metric = ImmediateExpectedReward(human_weights, reward_fun)
 
-        human = BoundedRational(trust_params, human_weights, reward_fun=reward_fun, kappa=1.0, perf_metric=perf_metric)
-                
+        # human = BoundedRational(trust_params,
+        #                         human_weights,
+        #                         reward_fun=reward_fun,
+        #                         kappa=1.0,
+        #                         perf_metric=perf_metric)
+
+        human = ReversePsychology(trust_params,
+                                  human_weights,
+                                  reward_fun=reward_fun,
+                                  performance_metric=perf_metric)
+
         # THINGS TO LOOK FOR AND STORE AND PLOT/PRINT
         # Trust, posterior after every interaction, health, time, recommendation, action
         # # Initialize storage
         # N stuff
-        recs = np.zeros((N,), dtype=int)
-        acts = np.zeros((N,), dtype=int)
+        recs = np.zeros((num_sites,), dtype=int)
+        acts = np.zeros((num_sites,), dtype=int)
         weights = posterior.weights.copy()
-        perf_actual = np.zeros((N,), dtype=int)
-        perf_est = np.zeros((N,), dtype=int)
+        perf_actual = np.zeros((num_sites,), dtype=int)
+        perf_est = np.zeros((num_sites,), dtype=int)
         
         # N+1 stuff
-        trust_feedback = np.zeros((N+1,), dtype=float)
-        trust_estimate = np.zeros((N+1,), dtype=float)
-        times = np.zeros((N+1,), dtype=int)
-        healths = np.zeros((N+1,), dtype=int)
-        parameter_estimates = np.zeros((N+1, 4), dtype=float)
-        wh_means = np.zeros((N+1,), dtype=float)
-        wh_map = np.zeros((N+1,), dtype=float)
-        wh_map_prob = np.zeros((N+1,), dtype=float)
-        posterior_dists = np.zeros((N+1, len(posterior.dist)), dtype=float)
+        trust_feedback = np.zeros((num_sites+1,), dtype=float)
+        trust_estimate = np.zeros((num_sites+1,), dtype=float)
+        times = np.zeros((num_sites+1,), dtype=int)
+        healths = np.zeros((num_sites+1,), dtype=int)
+        parameter_estimates = np.zeros((num_sites+1, 4), dtype=float)
+        wh_means = np.zeros((num_sites+1,), dtype=float)
+        wh_map = np.zeros((num_sites+1,), dtype=float)
+        wh_map_prob = np.zeros((num_sites+1,), dtype=float)
+        posterior_dists = np.zeros((num_sites+1, len(posterior.dist)), dtype=float)
 
         # Initialize health and time
         health = 100
@@ -104,28 +124,30 @@ class NonAdaptiveRobot:
 
         if PRINT_FLAG:
             # For printing purposes
-            table_data = [['prior', 'after_scan', 'rec', 'action', 'health', 'time', 'trust-fb', 'trust-est', 'perf-hum', 'perf-rob', 'wh-mean', 'wh-map']]
+            table_data = [['prior', 'after_scan', 'rec', 'action', 'health', 'time', 'trust-fb',
+                           'trust-est', 'perf-hum', 'perf-rob', 'wh-mean', 'wh-map']]
 
         # Initialize threats
-        threat_setter = ThreatSetter(N, prior=threat_level, seed=seed)
-        threat_setter.setThreats()
+        threat_setter = ThreatSetter(num_sites, prior=threat_level, seed=seed)
+        threat_setter.set_threats()
         prior = threat_setter.prior
         after_scan = threat_setter.after_scan
         threats = threat_setter.threats
 
         solver.update_danger(threats, prior, after_scan, reset=False)
 
-        # Initialize the trust feedbacks and estimates. This serves as a general starting state of trust for a participant (more like propensity)
+        # Initialize the trust feedbacks and estimates.
+        # This serves as a general starting state of trust for a participant (more like propensity)
         # This is before any interaction. Serves as a starting point for trust parameters
         trust_feedback[0] = human.get_feedback()
 
         # Get an initial guess on the parameters based on this feedback
-        initial_guess = estimator.getInitialGuess(trust_feedback[0])
+        initial_guess = estimator.get_initial_guess(trust_feedback[0])
 
         # Set the solver's trust params to this initial guess
         solver.update_params(initial_guess)
 
-        trust_estimate[0] = solver.get_trust_estimate(0)
+        trust_estimate[0] = solver.get_trust_estimate()
 
         # For each site, get recommendation, choose action, update health, time, trust, posterior
         for i in range(N):
@@ -162,7 +184,7 @@ class NonAdaptiveRobot:
 
             # Use the old values of health and time to compute the performance
             solver.forward(i, rec, posterior)
-            trust_est_after = solver.get_trust_estimate(i+1)
+            trust_est_after = solver.get_trust_estimate()
             trust_estimate[i+1] = trust_est_after
 
             # Update trust (based on old values of health and time)
@@ -171,18 +193,18 @@ class NonAdaptiveRobot:
             trust_feedback[i+1] = trust_fb_after
 
             # Update trust parameters
-            opt_params = estimator.getParams(solver.trust_params, solver.get_last_performance(i), trust_fb_after)
+            opt_params = estimator.get_params(solver.trust_params, solver.get_last_performance(), trust_fb_after)
             solver.update_params(opt_params)
             parameter_estimates[i+1, :] = np.array(opt_params)
 
             # Storage
-            perf_est[i] = solver.get_last_performance(i)
+            perf_est[i] = solver.get_last_performance()
             perf_actual[i] = human.get_last_performance()
 
             if PRINT_FLAG:
                 # Store stuff
                 row = []
-                row.append("{:.2f}".format(threat_setter.prior_levels[i]))
+                row.append("{:.2f}".format(threat_setter.prior[i]))
                 row.append("{:.2f}".format(threat_setter.after_scan[i]))
                 row.append(str(rec))
                 row.append(str(action))

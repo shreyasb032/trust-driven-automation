@@ -112,7 +112,7 @@ def analyze(parent_direc: str):
 
 def main(args: argparse.Namespace):
 
-    # parent_direc = './data/ThreatLevel/0.7/'
+    # parent_direc = './data/ThreatLevel(OldData)/0.7/'
     parent_direc = args.path
     analyze(parent_direc)   
 

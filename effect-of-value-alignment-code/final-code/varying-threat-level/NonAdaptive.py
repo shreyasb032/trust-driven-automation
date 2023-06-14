@@ -17,6 +17,7 @@ import argparse
 import pickle
 from tqdm import tqdm
 import json
+import copy
 
 
 class NonAdaptiveRobot:
@@ -47,6 +48,10 @@ class NonAdaptiveRobot:
         human_model_solver = args.human_model_solver  # The human model to be used by the solver
         human_model_actual = args.human_model_actual  # The human model to simulate the human
 
+        human_model_dict = {0: 'bounded_rational',
+                            1: 'rev_psych',
+                            2: 'disuse'}
+
         # For the threat setter
         threat_level = args.threat_level
 
@@ -69,7 +74,7 @@ class NonAdaptiveRobot:
         rob_weights = {'health': wh_rob, 'time': wc_rob, 'trust': wt_rob}
         solver = SolverConstantRewards(num_sites, rob_weights, trust_params.copy(), None, None, None,
                                        est_human_weights,
-                                       hum_mod='rev_psych',
+                                       hum_mod=human_model_dict[human_model_solver],
                                        reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
 
         # Intialize posterior
@@ -86,16 +91,19 @@ class NonAdaptiveRobot:
         else:
             perf_metric = ImmediateExpectedReward(human_weights, reward_fun)
 
-        # human = BoundedRational(trust_params,
-        #                         human_weights,
-        #                         reward_fun=reward_fun,
-        #                         kappa=1.0,
-        #                         perf_metric=perf_metric)
+        human = None
 
-        human = ReversePsychology(trust_params,
-                                  human_weights,
-                                  reward_fun=reward_fun,
-                                  performance_metric=perf_metric)
+        if human_model_actual == 0:
+            human = BoundedRational(trust_params,
+                                    human_weights,
+                                    reward_fun=reward_fun,
+                                    kappa=1.0,
+                                    performance_metric=perf_metric)
+        else:
+            human = ReversePsychology(trust_params,
+                                      human_weights,
+                                      reward_fun=reward_fun,
+                                      performance_metric=perf_metric)
 
         # THINGS TO LOOK FOR AND STORE AND PLOT/PRINT
         # Trust, posterior after every interaction, health, time, recommendation, action
@@ -147,10 +155,10 @@ class NonAdaptiveRobot:
         # Set the solver's trust params to this initial guess
         solver.update_params(initial_guess)
 
-        trust_estimate[0] = solver.get_trust_estimate()
+        trust_estimate[0] = solver.get_trust_estimate(0)
 
         # For each site, get recommendation, choose action, update health, time, trust, posterior
-        for i in range(N):
+        for i in range(num_sites):
 
             # Get the recommendation
             rec = solver.get_recommendation(i, posterior)
@@ -184,7 +192,7 @@ class NonAdaptiveRobot:
 
             # Use the old values of health and time to compute the performance
             solver.forward(i, rec, posterior)
-            trust_est_after = solver.get_trust_estimate()
+            trust_est_after = solver.get_trust_estimate(i+1)
             trust_estimate[i+1] = trust_est_after
 
             # Update trust (based on old values of health and time)
@@ -193,34 +201,30 @@ class NonAdaptiveRobot:
             trust_feedback[i+1] = trust_fb_after
 
             # Update trust parameters
-            opt_params = estimator.get_params(solver.trust_params, solver.get_last_performance(), trust_fb_after)
+            opt_params = estimator.get_params(solver.trust_params, solver.get_last_performance(i), trust_fb_after, i)
             solver.update_params(opt_params)
             parameter_estimates[i+1, :] = np.array(opt_params)
 
             # Storage
-            perf_est[i] = solver.get_last_performance()
+            perf_est[i] = solver.get_last_performance(i)
             perf_actual[i] = human.get_last_performance()
 
             if PRINT_FLAG:
                 # Store stuff
-                row = []
-                row.append("{:.2f}".format(threat_setter.prior[i]))
-                row.append("{:.2f}".format(threat_setter.after_scan[i]))
-                row.append(str(rec))
-                row.append(str(action))
-                row.append(str(health_old))
-                row.append(str(time_old))
-                row.append("{:.2f}".format(trust_fb_after))
-                row.append("{:.2f}".format(trust_est_after))
-                row.append(str(human.get_last_performance()))
-                row.append(str(solver.get_last_performance(i)))
-                row.append("{:.2f}".format(posterior.get_mean()))
-                row.append("{:.2f}".format(posterior.get_map()[1]))
+                row = ["{:.2f}".format(threat_setter.prior[i]), "{:.2f}".format(threat_setter.after_scan[i]), str(rec),
+                       str(action), str(health_old), str(time_old), "{:.2f}".format(trust_fb_after),
+                       "{:.2f}".format(trust_est_after), str(human.get_last_performance()),
+                       str(solver.get_last_performance(i)), "{:.2f}".format(posterior.get_mean()),
+                       "{:.2f}".format(posterior.get_map()[1])]
                 table_data.append(row)
 
         if PRINT_FLAG:
             # Get the values after the last site
-            row = ['', '', '', '', str(health), str(current_time), "{:.2f}".format(human.get_mean()), "{:.2f}".format(solver.get_trust_estimate()), str(human.get_last_performance()), str(solver.get_last_performance()), "{:.2f}".format(posterior.get_mean()), "{:.2f}".format(posterior.get_map()[1])]
+            row = ['', '', '', '', str(health), str(current_time), "{:.2f}".format(human.get_mean()),
+                   "{:.2f}".format(solver.get_trust_estimate(args.num_sites)),
+                   str(human.get_last_performance()),
+                   str(solver.get_last_performance(args.num_sites)),
+                   "{:.2f}".format(posterior.get_mean()), "{:.2f}".format(posterior.get_map()[1])]
             table_data.append(row)
             # Print
             col_print(table_data)
@@ -254,18 +258,18 @@ class NonAdaptiveRobot:
 
         return data
 
-    def run(self, data_direc):
+    def run(self, parent_directory, timestamp):
 
         args = self.args
 
-        ############################################# PARAMETERS THAT CAN BE MODIFIED ##################################################
+        # PARAMETERS THAT CAN BE MODIFIED ##########################################################################
         num_simulations = args.num_simulations      # Number of simulations to run
-        N = args.num_sites                          # Number of sites in a mission (Horizon for planning)
-        stepsize = args.posterior_stepsize          # Stepsize in the posterior distrbution over the weights
-        num_weights = int(1.0/stepsize) + 1           # Number of weight samples in the posterior distribution
-        #################################################################################################################################
+        num_sites = args.num_sites                  # Number of sites in a mission (Horizon for planning)
+        stepsize = args.posterior_stepsize          # Stepsize in the posterior distribution over the weights
+        num_weights = int(1.0/stepsize) + 1         # Number of weight samples in the posterior distribution
+        ############################################################################################################
 
-        data_all = initialize_storage_dict(num_simulations, N, num_weights)
+        data_all = initialize_storage_dict(num_simulations, num_sites, num_weights)
 
         for i in tqdm(range(num_simulations)):
             data_one_simulation = self.run_one_simulation(i)
@@ -273,31 +277,46 @@ class NonAdaptiveRobot:
                 # print(k)
                 data_all[k][i] = v
 
-        ############################### STORING THE DATA #############################
+        # STORING THE DATA
 
-        if not os.path.exists(data_direc):
-            os.makedirs(data_direc)
+        data_directory = os.path.join(parent_directory, timestamp)
+        if not os.path.exists(data_directory):
+            os.makedirs(data_directory)
 
-        data_file = data_direc + 'data.pkl'
+        simulation_parameter_file = os.path.join(parent_directory, 'sim_params.json')
+        if not os.path.exists(simulation_parameter_file):
+            sim_params = vars(args).copy()
+            del sim_params['threat_level']
+            with open(simulation_parameter_file, 'wt') as f:
+                json.dump(sim_params, f, indent=4)
+
+        data_file = os.path.join(data_directory, 'data.pkl')
         with open(data_file, 'wb') as f:
             pickle.dump(data_all, f)
 
-        json_file = data_direc + 'args.json'
-
+        json_file = os.path.join(data_directory, 'args.json')
+        json_data = {'threat_level': args.threat_level}
         with open(json_file, 'wt') as f:
-            json.dump(vars(args), f, indent=4)
+            json.dump(json_data, f)
 
 
 if __name__ == "__main__":
 
-    parser= argparse.ArgumentParser(description='Non-adaptive solver that only uses learnt human weights to estimate trust')
+    parser = argparse.ArgumentParser(description='Non-adaptive solver that only uses '
+                                                 'learnt human weights to estimate trust')
 
     # Add the common arguments
     parser = add_common_args(parser)
 
     # Add specific arguments for this script
-    parser.add_argument('--health-weight-robot', type=float, help='Fixed health weight of the robot (default: 0.7)', default=0.7)
-    parser.add_argument('--health-weight-human', type=float, help='True health weight of the human (default: 0.9)', default=0.9)
+    parser.add_argument('--health-weight-robot',
+                        type=float,
+                        help='Fixed health weight of the robot (default: 0.7)',
+                        default=0.7)
+    parser.add_argument('--health-weight-human',
+                        type=float,
+                        help='True health weight of the human (default: 0.9)',
+                        default=0.9)
 
     nar = NonAdaptiveRobot(parser.parse_args())
-    nar.run()
+    nar.run('.', 'test_timestamp')

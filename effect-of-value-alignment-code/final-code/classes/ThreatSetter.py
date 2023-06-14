@@ -52,12 +52,12 @@ class ThreatSetter:
         for i in range(self.N):
             if not self.threats[i]:
                 # Rather than a uniform distribution, we may want to use a left-skewed distribution
-                self.after_scan[i] = self.rng.beta(4, 28)      # This ensures that the mode of the distribution is at 0.1
-                # self.after_scan[i] = self.rng.uniform(0., 0.3)
+                self.after_scan[i] = self.rng.beta(4, 28)
+                # This ensures that the mode of the distribution is at 0.1
             else:
                 # Rather than a uniform distribution, we may want to use a right-skewed distribution
-                self.after_scan[i] = self.rng.beta(28, 4)      # This ensures that the mode of the distribution is at 0.9
-                # self.after_scan[i] = self.rng.uniform(0.7, 1.0)
+                self.after_scan[i] = 1.0 - self.rng.beta(4, 28)
+                # This ensures that the mode of the distribution is at 0.9
 
 
 def main():

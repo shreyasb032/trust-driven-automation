@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 
+
 def add_common_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--trust-weight',
@@ -58,37 +59,68 @@ def add_common_args(parser: argparse.ArgumentParser):
                         help='Error tolerance for the gradient descent step (default: 0.01)',
                         default=0.01)
 
-    parser.add_argument('--perf-metric', type=int, help="Performance metric to use: 1 - Observed, 2 - Expected (default: 1)", default=1)
-    parser.add_argument('--hl', type=float, help="Health loss cost (default: 10.0)", default=10.0)
-    parser.add_argument('--tc', type=float, help="Time loss cost (default: 10.0)", default=10.0)
-    parser.add_argument('--health-weight-robot', type=float, help='Health weight of the robot (default: 0.8)', default=0.8)
-    parser.add_argument('--health-weight-human', type=float, help='Health weight of the human (default: 0.8)', default=0.8)
+    parser.add_argument('--perf-metric',
+                        type=int,
+                        help="Performance metric to use: 1 - Observed, 2 - Expected (default: 1)",
+                        default=1)
+
+    parser.add_argument('--hl',
+                        type=float,
+                        help="Health loss cost (default: 10.0)",
+                        default=10.0)
+
+    parser.add_argument('--tc',
+                        type=float,
+                        help="Time loss cost (default: 10.0)",
+                        default=10.0)
+
+    parser.add_argument('--health-weight-robot',
+                        type=float,
+                        help='Health weight of the robot (default: 0.8)',
+                        default=0.8)
+
+    parser.add_argument('--health-weight-human',
+                        type=float,
+                        help='Health weight of the human (default: 0.8)',
+                        default=0.8)
+
+    parser.add_argument('--human-model-solver',
+                        type=int,
+                        help='Human model to be used by the solver - 0:bounded rational, 1:reverse psychology, '
+                             '2:disuse',
+                        default=1)
+
+    parser.add_argument('--human-model-actual',
+                        type=int,
+                        help='Human model to be used to simulate the human - 0:bounded rational, 1:reverse psychology, '
+                             '2:disuse',
+                        default=1)
 
     return parser
 
+
 def initialize_storage_dict(num_simulations, N, num_weights):
 
-    data = {}
-
-    data['trust feedback'] = np.zeros((num_simulations, N+1), dtype=float)
-    data['trust estimate'] = np.zeros((num_simulations, N+1), dtype=float)
-    data['health'] = np.zeros((num_simulations, N+1), dtype=int)
-    data['time'] = np.zeros((num_simulations, N+1), dtype=int)
-    data['recommendation'] = np.zeros((num_simulations, N), dtype=int)
-    data['actions'] = np.zeros((num_simulations, N), dtype=int)
-    data['weights'] = np.zeros((num_simulations, N, num_weights), dtype=float)
-    data['posterior'] = np.zeros((num_simulations, N+1, num_weights), dtype=float)
-    data['prior threat level'] = np.zeros((num_simulations, N), dtype=float)
-    data['after scan level'] = np.zeros((num_simulations, N), dtype=float)
-    data['threat'] = np.zeros((num_simulations, N), dtype=int)
-    data['trust parameter estimates'] = np.zeros((num_simulations, N+1, 4), dtype=float)
-    data['mean health weight'] = np.zeros((num_simulations, N+1), dtype=float)
-    data['map health weight'] = np.zeros((num_simulations, N+1), dtype=float)
-    data['map health weight probability'] = np.zeros((num_simulations, N+1), dtype=float)
-    data['performance estimates'] = np.zeros((num_simulations, N), dtype=int)
-    data['performance actual'] = np.zeros((num_simulations, N), dtype=int)        
+    data = {'trust feedback': np.zeros((num_simulations, N + 1), dtype=float),
+            'trust estimate': np.zeros((num_simulations, N + 1), dtype=float),
+            'health': np.zeros((num_simulations, N + 1), dtype=int),
+            'time': np.zeros((num_simulations, N + 1), dtype=int),
+            'recommendation': np.zeros((num_simulations, N), dtype=int),
+            'actions': np.zeros((num_simulations, N), dtype=int),
+            'weights': np.zeros((num_simulations, N, num_weights), dtype=float),
+            'posterior': np.zeros((num_simulations, N + 1, num_weights), dtype=float),
+            'prior threat level': np.zeros((num_simulations, N), dtype=float),
+            'after scan level': np.zeros((num_simulations, N), dtype=float),
+            'threat': np.zeros((num_simulations, N), dtype=int),
+            'trust parameter estimates': np.zeros((num_simulations, N + 1, 4), dtype=float),
+            'mean health weight': np.zeros((num_simulations, N + 1), dtype=float),
+            'map health weight': np.zeros((num_simulations, N + 1), dtype=float),
+            'map health weight probability': np.zeros((num_simulations, N + 1), dtype=float),
+            'performance estimates': np.zeros((num_simulations, N), dtype=int),
+            'performance actual': np.zeros((num_simulations, N), dtype=int)}
 
     return data
+
 
 def col_print(table_data):
     
@@ -99,7 +131,8 @@ def col_print(table_data):
     for row in table_data:
         print(string.format(*row))
 
-class simParams:
+
+class SimParams:
 
     def __init__(self):
 

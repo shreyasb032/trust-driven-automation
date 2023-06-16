@@ -29,7 +29,7 @@ def analyze(parent_direc: str, region: int):
                 pass
     
     # Get the grid stepsize
-    args_file = path.join(direc_list[0], 'args.json')
+    args_file = path.join(parent_direc, 'wh_start_0.00', 'sim_params.json')
     with open(args_file, 'r') as f:
         args = json.load(f)
 

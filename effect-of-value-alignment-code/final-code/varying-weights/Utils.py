@@ -12,7 +12,7 @@ def add_common_args(parser: argparse.ArgumentParser):
     parser.add_argument('--trust-params',
                         type=int,
                         help='Trust parameters for the human (0-low, 1-mid, 2-high), default=1',
-                        default=0)
+                        default=1)
 
     parser.add_argument('--num-sites', type=int, help='Number of sites in a mission (default: 40)', default=40)
     parser.add_argument('--num-missions', type=int, help='Number of missions (default: 1)', default=1)
@@ -48,13 +48,13 @@ def add_common_args(parser: argparse.ArgumentParser):
                         type=int,
                         help='Human model to be used by the solver - 0:bounded rational, 1:reverse psychology, '
                              '2:disuse',
-                        default=1)
+                        default=0)
 
     parser.add_argument('--human-model-actual',
                         type=int,
                         help='Human model to be used to simulate the human - 0:bounded rational, 1:reverse psychology, '
                              '2:disuse',
-                        default=1)
+                        default=0)
     return parser
 
 

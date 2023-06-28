@@ -4,6 +4,7 @@ import argparse
 class MissionSettings:
 
     def __init__(self, args: argparse.Namespace):
+        self.num_simulations = args.num_simulations
         self.num_sites = args.num_sites
         self.health_loss = args.health_loss
         self.time_loss = args.time_loss

@@ -8,7 +8,6 @@ import _context
 from Utils import *
 from classes.POMDPSolver import SolverConstantRewards
 from classes.HumanModels import BoundedRational, ReversePsychology
-from classes.IRLModel import Posterior
 from classes.ThreatSetter import ThreatSetter
 from classes.RewardFunctions import Constant
 from classes.ParamsUpdater import Estimator
@@ -29,7 +28,7 @@ class NonAdaptiveRobot:
 
         args = self.args
         # Output data: Trust feedback, trust estimation,
-        # posterior distribution, weights, healths, times, recommendations, actions
+        # weights, healths, times, recommendations, actions
         data = {}
 
         trust_params_dict = {0: [30., 90., 10., 20.],
@@ -40,7 +39,6 @@ class NonAdaptiveRobot:
         wh_rob = args.health_weight_robot           # Fixed health weight of the robot
         wt_rob = args.trust_weight                  # Trust increase reward weight
         kappa = args.kappa                          # Assumed rationality coefficient in the bounded rationality model
-        stepsize = args.posterior_stepsize                    # stepsize in the posterior
         wh_hum = args.health_weight_human           # True health weight of the human. time weight = 1 - health weight
         trust_params_idx = args.trust_params        # Human's true trust parameters in the beta distribution model
         trust_params = trust_params_dict[trust_params_idx]
@@ -79,9 +77,6 @@ class NonAdaptiveRobot:
                                        hum_mod=human_model_dict[human_model_solver],
                                        reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
 
-        # Initialize posterior
-        posterior = Posterior(kappa=kappa, stepsize=stepsize, reward_fun=reward_fun)
-
         # Initialize human model
         wc_hum = 1. - wh_hum
         human_weights = {"health": wh_hum, "time": wc_hum}
@@ -108,12 +103,11 @@ class NonAdaptiveRobot:
                                       performance_metric=perf_metric)
 
         # THINGS TO LOOK FOR AND STORE AND PLOT/PRINT
-        # Trust, posterior after every interaction, health, time, recommendation, action
+        # Trust, health, time, recommendation, action
         # # Initialize storage
         # N stuff
         recs = np.zeros((num_sites,), dtype=int)
         acts = np.zeros((num_sites,), dtype=int)
-        weights = posterior.weights.copy()
         perf_actual = np.zeros((num_sites,), dtype=int)
         perf_est = np.zeros((num_sites,), dtype=int)
         
@@ -123,10 +117,6 @@ class NonAdaptiveRobot:
         times = np.zeros((num_sites+1,), dtype=int)
         healths = np.zeros((num_sites+1,), dtype=int)
         parameter_estimates = np.zeros((num_sites+1, 4), dtype=float)
-        wh_means = np.zeros((num_sites+1,), dtype=float)
-        wh_map = np.zeros((num_sites+1,), dtype=float)
-        wh_map_prob = np.zeros((num_sites+1,), dtype=float)
-        posterior_dists = np.zeros((num_sites+1, len(posterior.dist)), dtype=float)
 
         # Initialize health and time
         health = 100
@@ -135,7 +125,7 @@ class NonAdaptiveRobot:
         if PRINT_FLAG:
             # For printing purposes
             table_data = [['prior', 'after_scan', 'rec', 'action', 'health', 'time', 'trust-fb',
-                           'trust-est', 'perf-hum', 'perf-rob', 'wh-mean', 'wh-map']]
+                           'trust-est', 'perf-hum', 'perf-rob']]
 
         # Initialize threats
         threat_setter = ThreatSetter(num_sites, prior=threat_level, seed=seed)
@@ -159,11 +149,11 @@ class NonAdaptiveRobot:
 
         trust_estimate[0] = solver.get_trust_estimate(0)
 
-        # For each site, get recommendation, choose action, update health, time, trust, posterior
+        # For each site, get recommendation, choose action, update health, time, trust
         for i in range(num_sites):
 
             # Get the recommendation
-            rec = solver.get_recommendation(i, posterior)
+            rec = solver.get_recommendation(i)
 
             # Choose action
             action = human.choose_action(rec, after_scan[i], health, current_time)
@@ -184,16 +174,8 @@ class NonAdaptiveRobot:
             times[i] = time_old
             healths[i] = health_old
 
-            # Update posterior (UPDATE THIS BEFORE UPDATING TRUST)
-            wh_means[i] = posterior.get_mean()
-            prob, weight = posterior.get_map()
-            wh_map[i] = weight
-            wh_map_prob[i] = prob
-            posterior_dists[i, :] = posterior.dist
-            posterior.update(rec, action, human.get_mean(), health_old, time_old, after_scan[i])
-
             # Use the old values of health and time to compute the performance
-            solver.forward(i, rec, posterior)
+            solver.forward(i, rec)
             trust_est_after = solver.get_trust_estimate(i+1)
             trust_estimate[i+1] = trust_est_after
 
@@ -215,9 +197,7 @@ class NonAdaptiveRobot:
                 # Store stuff
                 row = ["{:.2f}".format(threat_setter.prior[i]), "{:.2f}".format(threat_setter.after_scan[i]), str(rec),
                        str(action), str(health_old), str(time_old), "{:.2f}".format(trust_fb_after),
-                       "{:.2f}".format(trust_est_after), str(human.get_last_performance()),
-                       str(solver.get_last_performance(i)), "{:.2f}".format(posterior.get_mean()),
-                       "{:.2f}".format(posterior.get_map()[1])]
+                       "{:.2f}".format(trust_est_after), str(human.get_last_performance())]
                 table_data.append(row)
 
         if PRINT_FLAG:
@@ -225,8 +205,7 @@ class NonAdaptiveRobot:
             row = ['', '', '', '', str(health), str(current_time),
                    "{:.2f}".format(human.get_mean()),
                    "{:.2f}".format(solver.get_trust_estimate(args.num_sites)),
-                   str(human.get_last_performance()), str(solver.get_last_performance(args.num_sites)),
-                   "{:.2f}".format(posterior.get_mean()), "{:.2f}".format(posterior.get_map()[1])]
+                   str(human.get_last_performance()), str(solver.get_last_performance(args.num_sites))]
             table_data.append(row)
             # Print
             col_print(table_data)
@@ -234,11 +213,6 @@ class NonAdaptiveRobot:
         # Store the final values after the last house
         healths[-1] = health
         times[-1] = current_time
-        wh_means[-1] = posterior.get_mean()
-        prob, weight = posterior.get_map()
-        wh_map[-1] = weight
-        wh_map_prob[-1] = prob
-        posterior_dists[-1, :] = posterior.dist
 
         data['trust feedback'] = trust_feedback
         data['trust estimate'] = trust_estimate
@@ -246,15 +220,10 @@ class NonAdaptiveRobot:
         data['time'] = times
         data['recommendation'] = recs
         data['actions'] = acts
-        data['weights'] = weights
-        data['posterior'] = posterior_dists
         data['prior threat level'] = prior
         data['after scan level'] = after_scan
         data['threat'] = threats
         data['trust parameter estimates'] = parameter_estimates
-        data['mean health weight'] = wh_means
-        data['map health weight'] = wh_map
-        data['map health weight probability'] = wh_map_prob
         data['performance estimates'] = perf_est
         data['performance actual'] = perf_actual
 
@@ -267,11 +236,9 @@ class NonAdaptiveRobot:
         # PARAMETERS THAT CAN BE MODIFIED ############################################################################
         num_simulations = args.num_simulations      # Number of simulations to run
         num_sites = args.num_sites                  # Number of sites in a mission (Horizon for planning)
-        stepsize = args.posterior_stepsize          # Stepsize in the posterior distrbution over the weights
-        num_weights = int(1.0/stepsize) + 1         # Number of weight samples in the posterior distribution
         ##############################################################################################################
 
-        data_all = initialize_storage_dict(num_simulations, num_sites, num_weights)
+        data_all = initialize_storage_dict(num_simulations, num_sites)
 
         for i in tqdm(range(num_simulations)):
             data_one_simulation = self.run_one_simulation(i)

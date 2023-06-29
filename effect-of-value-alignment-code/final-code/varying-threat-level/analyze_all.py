@@ -72,36 +72,38 @@ def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
     # ax.plot(threat_level, trust_fb, c='tab:blue', lw=3, label='Feedback')
     ax.scatter(threat_level, trust_fb, s=25, c='tab:blue', marker='o', label='Feedback')
     # ax.scatter(threat_level, trust_est, s=25, c='tab:orange', marker='o', label='estimate')
-    
+
+    # trust_params = [60., 60., 10., 20.]
+
     # if d_star < 1 and wh_hum < 0.5:
     #     # Region 2
     #     d_arr = np.array(threat_level)
     #     lower_bound_of_trust_increase = (1. - d_arr) * beta.cdf(d_star, 4, 28) + d_arr * beta.cdf(d_star, 28, 4)
-    #     final_exp_alpha = 90 + lower_bound_of_trust_increase * 40 * 20
-    #     final_exp_beta = 30 + (1 - lower_bound_of_trust_increase) * 40 * 30
+    #     final_exp_alpha = trust_params[0] + lower_bound_of_trust_increase * 40 * trust_params[2]
+    #     final_exp_beta = trust_params[1] + (1 - lower_bound_of_trust_increase) * 40 * trust_params[3]
     #     final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta)
     #     ax.plot(d_arr, final_exp_trust, lw=2, c='black', ls='dashed', label='Expected')
     # elif d_star > 1 and wh_hum > 0.5:
     #     # Region 3
     #     d_arr = np.array(threat_level)
     #     lower_bound_of_trust_increase = (1. - d_arr) * beta.cdf(0.5, 4, 28) + d_arr * beta.cdf(0.5, 28, 4)
-    #     final_exp_alpha = 90 + lower_bound_of_trust_increase * 40 * 20
-    #     final_exp_beta = 30 + (1 - lower_bound_of_trust_increase) * 40 * 30
+    #     final_exp_alpha = trust_params[0] + lower_bound_of_trust_increase * 40 * trust_params[2]
+    #     final_exp_beta = trust_params[1] + (1 - lower_bound_of_trust_increase) * 40 * trust_params[3]
     #     final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta)
     #     ax.plot(d_arr, final_exp_trust, lw=2, c='black', ls='dashed', label='Expected')
     # elif d_star < 1 and wh_hum > 0.5:
     #     # Region 4
     #     d_arr = np.array(threat_level)
     #     lower_bound_of_trust_increase = (1. - d_arr) * beta.cdf(d_star, 4, 28) + d_arr
-    #     final_exp_alpha = 90 + lower_bound_of_trust_increase * 40 * 20
-    #     final_exp_beta = 30 + (1 - lower_bound_of_trust_increase) * 40 * 30
+    #     final_exp_alpha = trust_params[0] + lower_bound_of_trust_increase * 40 * trust_params[2]
+    #     final_exp_beta = trust_params[1] + (1 - lower_bound_of_trust_increase) * 40 * trust_params[3]
     #     final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta)
     #     ax.plot(d_arr, final_exp_trust, lw=2, c='black', ls='dashed', label='Expected')
     # else:
     #     # Region 1
     #     d_arr = np.array(threat_level)
-    #     final_exp_alpha = 90 + 40 * 20
-    #     final_exp_beta = 30
+    #     final_exp_alpha = trust_params[0] + 40 * trust_params[2]
+    #     final_exp_beta = trust_params[1]
     #     final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta) * np.ones_like(d_arr)
     #     ax.plot(d_arr, final_exp_trust, lw=2, c='black', ls='dashed', label='Expected')
 

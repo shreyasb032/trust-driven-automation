@@ -1,4 +1,4 @@
-data/*
-images/*
-figures/*
+./data/*
+./images/*
+./figures/*
 *.idea

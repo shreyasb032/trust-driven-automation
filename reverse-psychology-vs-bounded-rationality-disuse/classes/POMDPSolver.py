@@ -2,7 +2,6 @@ from typing import Dict, List
 import numpy as np
 from copy import copy
 from classes.RewardFunctions import RewardsBase
-from classes.IRLModel import Posterior
 
 
 class Solver:
@@ -161,13 +160,12 @@ class Solver:
         return self.__get_immediate_reward(current_house, current_health, current_time, action, self.wh_hum,
                                            self.wc_hum)
 
-    def get_recommendation(self, current_house, current_health, current_time, posterior: Posterior):
+    def get_recommendation(self, current_house, current_health, current_time):
         """
         The MDP solving algorithm (value iteration)
         :param current_house: the current site number to search
         :param current_health: the current level of health of the soldier
         :param current_time: the current amount of time spent in the mission
-        :param posterior: the maintained posterior distribution on the health reward weight of the human
         """
 
         alpha_0 = self.trust_params[0]
@@ -218,7 +216,7 @@ class Solver:
                         pcl = 0.
                         ptl = 0.
 
-                        self.wh_hum = posterior.get_mean()
+                        self.wh_hum = self.wh         # Assume that the human has the same reward weight as the solver
                         self.wc_hum = 1 - self.wh_hum
 
                         # Estimated expected immediate rewards for human for choosing to NOT USE and
@@ -358,17 +356,16 @@ class Solver:
 
         return action_matrix[0, 0, 0, 0]
 
-    def forward(self, current_house, rec, health, curr_time, posterior: Posterior):
+    def forward(self, current_house, rec, health, curr_time):
         """
         Moves the solver forward one step. Changes health, time, house number, and adds to the performance history
         :param current_house: the number of hte current search site
         :param rec: the recommendation given by the robot
         :param health: the level of health of the soldier before searching this site
         :param curr_time: the time spent in the mission before searching this site
-        :param posterior: the non-updated posterior
         """
 
-        self.wh_hum = posterior.get_mean()
+        self.wh_hum = self.wh                 # Assume that the human has the same reward weight as the solver
         self.wc_hum = 1 - self.wh_hum
 
         hl, tc = self.reward_fun.reward(health, curr_time)
@@ -465,10 +462,9 @@ class SolverConstantRewards(Solver):
         """
         return self.__get_immediate_reward(current_house, action, self.wh_hum, self.wc_hum)
 
-    def get_recommendation(self, current_house, posterior: Posterior):
+    def get_recommendation(self, current_house):
         """
         :param current_house: the index of the current search site
-        :param posterior: the maintained posterior distribution on the human's reward weights
         """
 
         alpha_0 = self.trust_params[0]
@@ -499,7 +495,7 @@ class SolverConstantRewards(Solver):
             possible_betas = beta_previous + (t - np.arange(t + 1)) * wf
 
             # The below are actual observable rewards based on threat presence
-            self.wh_hum = posterior.get_mean()
+            self.wh_hum = self.wh                      # Assume that the human has the same reward weight as the solver
             self.wc_hum = 1. - self.wh_hum
             r0_no_threat = 0
             r0_threat = -self.wh_hum * self.hl
@@ -628,14 +624,13 @@ class SolverConstantRewards(Solver):
 
         return action_matrix[0, 0]
 
-    def forward(self, current_house, rec, posterior: Posterior):
+    def forward(self, current_house, rec):
         """
         :param current_house: the index of the current search site
         :param rec: the recommendation given by the robot
-        :param posterior: the maintained posterior distribution on the human's health reward weight
         """
 
-        self.wh_hum = posterior.get_mean()
+        self.wh_hum = self.wh            # Assume that the human has the same reward weight as the solver
         self.wc_hum = 1. - self.wh_hum
 
         rew2use = -self.wc_hum * self.tc

@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from os import path, walk
 import json
 import datetime
-from scipy.stats import beta
 import seaborn as sns
 sns.set_theme(style='white', context='paper')
 

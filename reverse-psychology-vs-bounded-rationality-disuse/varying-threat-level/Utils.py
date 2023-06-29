@@ -39,11 +39,6 @@ def add_common_args(parser: argparse.ArgumentParser):
                         help='Number of simulations to run (default: 20)',
                         default=20)
 
-    parser.add_argument('--posterior-stepsize',
-                        type=float,
-                        help='Stepsize in the posterior distribution (default(0.05)',
-                        default=0.05)
-
     parser.add_argument('--num-gradient-steps',
                         type=int,
                         help='Number of iterations of gradient descent for trust parameter estimation (default: 200)',
@@ -99,7 +94,7 @@ def add_common_args(parser: argparse.ArgumentParser):
     return parser
 
 
-def initialize_storage_dict(num_simulations, N, num_weights):
+def initialize_storage_dict(num_simulations, N):
 
     data = {'trust feedback': np.zeros((num_simulations, N + 1), dtype=float),
             'trust estimate': np.zeros((num_simulations, N + 1), dtype=float),
@@ -107,15 +102,10 @@ def initialize_storage_dict(num_simulations, N, num_weights):
             'time': np.zeros((num_simulations, N + 1), dtype=int),
             'recommendation': np.zeros((num_simulations, N), dtype=int),
             'actions': np.zeros((num_simulations, N), dtype=int),
-            'weights': np.zeros((num_simulations, N, num_weights), dtype=float),
-            'posterior': np.zeros((num_simulations, N + 1, num_weights), dtype=float),
             'prior threat level': np.zeros((num_simulations, N), dtype=float),
             'after scan level': np.zeros((num_simulations, N), dtype=float),
             'threat': np.zeros((num_simulations, N), dtype=int),
             'trust parameter estimates': np.zeros((num_simulations, N + 1, 4), dtype=float),
-            'mean health weight': np.zeros((num_simulations, N + 1), dtype=float),
-            'map health weight': np.zeros((num_simulations, N + 1), dtype=float),
-            'map health weight probability': np.zeros((num_simulations, N + 1), dtype=float),
             'performance estimates': np.zeros((num_simulations, N), dtype=int),
             'performance actual': np.zeros((num_simulations, N), dtype=int)}
 

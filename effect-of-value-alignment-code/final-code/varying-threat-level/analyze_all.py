@@ -10,11 +10,11 @@ import json
 import datetime
 from scipy.stats import beta
 import seaborn as sns
+
 sns.set_theme(style='white', context='paper')
 
 
 def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
-
     # Most shapes are (num_simulations, num_sites or num_sites+1)
     # Step 1: Accumulate data
     # Get the list of subdirectories
@@ -28,7 +28,7 @@ def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
                 # print(direc_list[-1])
             except:
                 pass
-    
+
     # Get the grid stepsize
     args_file = path.join(parent_direc, 'rob{:1.1f}'.format(wh_rob), 'hum{:1.1f}'.format(wh_hum), 'sim_params.json')
     with open(args_file, 'r') as f:
@@ -41,7 +41,7 @@ def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
     c = args['tc']
     wh_rob = args['health_weight_robot']
     wh_hum = args['health_weight_human']
-    d_star = (1-wh_rob) * c / (wh_rob * h)
+    d_star = (1 - wh_rob) * c / (wh_rob * h)
 
     # Initialize data
     trust_est = []
@@ -117,7 +117,6 @@ def analyze(parent_direc: str, wh_rob: float, wh_hum: float):
 
 
 def main(args: argparse.Namespace):
-
     # parent_direc = './data/ThreatLevel(OldData)/0.7/'
     parent_direc = args.path
     wh_rob = args.wh_rob
@@ -126,7 +125,6 @@ def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description='Exploring the stored simulated data')
     parser.add_argument('--path', type=str, help="Path to the parent directory of the data to be analysed")
     parser.add_argument('--wh-rob', type=float, help='Health reward weight of the robot')

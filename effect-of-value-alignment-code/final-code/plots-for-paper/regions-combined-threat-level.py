@@ -105,8 +105,8 @@ def analyze(parent_directory: str, ax: Axes3D, threat_level, cmap: str='plasma')
 
 def main():
 
-    # cmap_str = 'plasma'
-    cmap_str = 'viridis'
+    cmap_str = 'plasma'
+    # cmap_str = 'viridis'
 
     fig = plt.figure(figsize=(12, 7))
     ax1 = fig.add_subplot(121, projection='3d')

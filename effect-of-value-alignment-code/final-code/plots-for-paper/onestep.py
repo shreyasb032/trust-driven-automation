@@ -26,12 +26,12 @@ def main():
     expected_one_step_0 = -d*(trust + (1-trust)*p0) * wh_r*h - (1 - trust) * p1 * wc_r *c
     expected_one_step_1 = -d*(1-trust)*p0*wh_r*h - (trust + (1-trust)*p1)*wc_r*c
     
-    fig, ax = plt.subplots(layout='tight', figsize=(7, 4))
+    fig, ax = plt.subplots(layout='tight', figsize=(7, 3))
     ax.plot(trust, expected_one_step_1, lw=2, c='black', label=r'$a=1$')
     ax.plot(trust, expected_one_step_0, lw=2, ls='dashed', c='black', label=r'$a=0$')
     ax.set_xlabel('Trust', fontsize=14)
     ax.set_ylabel(r'$E[R(a)]$', fontsize=14)
-    ax.set_title('Expected one-step rewards - Bounded Rationality Disuse', fontsize=16)
+    ax.set_title('Expected one-step rewards', fontsize=16)
     ax.legend()
 
     expected_one_step_0_rev = -trust*wh_r*h*d - (1.-trust)*wc_r*c

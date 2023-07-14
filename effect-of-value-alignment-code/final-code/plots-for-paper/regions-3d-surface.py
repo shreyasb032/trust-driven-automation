@@ -1,3 +1,5 @@
+import sys
+
 import _context
 from classes.DataReader import PickleReader
 import numpy as np
@@ -5,14 +7,13 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from os import path, walk
 import json
-from mpl_toolkits.mplot3d import Axes3D
 import datetime
 import seaborn as sns
 sns.set_theme(style='white', context='paper')
 # sns.set(font_scale=1.1)
 
 
-def analyze(parent_directory: str, ax: Axes3D, cmap: str='plasma'):
+def analyze(parent_directory: str, ax: plt.Axes, cmap: str='plasma'):
     # Most shapes are (num_simulations, num_sites or num_sites+1)
     # Step 1: Accumulate data
     # Get the list of subdirectories
@@ -33,23 +34,14 @@ def analyze(parent_directory: str, ax: Axes3D, cmap: str='plasma'):
 
     grid_stepsize = args['grid_step']
 
-    # Compute w_star
-    h = args['hl']
-    c = args['tc']
-    w_star = c / (h + c)
-
-    # Start is included. End is not included
-
-    wh_hum_start = 0.05
-    wh_hum_end = 0.95 + grid_stepsize
-    wh_rob_start = 0.05
-    wh_rob_end = 0.95 + grid_stepsize
-
     # Initialize data
     wh_rob = []
     wh_hum = []
     trust_est = []
     trust_fb = []
+
+    counts_hum = {}
+    counts_rob = {}
 
     for directory in directory_list:
         args_file = path.join(directory, 'args.json')
@@ -62,6 +54,18 @@ def analyze(parent_directory: str, ax: Axes3D, cmap: str='plasma'):
 
         _wh_hum = args['health_weight_human']
         _wh_rob = args['health_weight_robot']
+        str_hum = f"{_wh_hum:.2f}"
+        str_rob = f"{_wh_rob:.2f}"
+
+        if str_hum not in counts_hum.keys():
+            counts_hum[str_hum] = 1
+        else:
+            counts_hum[str_hum] += 1
+
+        if str_rob not in counts_rob.keys():
+            counts_rob[str_rob] = 1
+        else:
+            counts_rob[str_rob] += 1
 
         wh_hum.append(_wh_hum)
         wh_rob.append(_wh_rob)
@@ -69,28 +73,47 @@ def analyze(parent_directory: str, ax: Axes3D, cmap: str='plasma'):
         trust_fb.append(np.mean(data['trust feedback'][:, -1]))
         trust_est.append(np.mean(data['trust estimate'][:, -1]))
 
+    # print(counts_hum)
+    # print(counts_rob)
+    # sys.exit()
     wh_rob_list = list(set(wh_rob))
-    wh_rob_list.sort()
     wh_hum_list = list(set(wh_hum))
-    wh_hum_list.sort()
+    # wh_rob_list.sort()
+    # wh_hum_list.sort()
     # print(wh_rob_list)
     # print(len(wh_rob_list))
     # print(wh_hum_list)
     # print(len(wh_hum_list))
     # return
     # Step 2: Plot
-    # Things to plot on the 3-d graph
-    # x-axis is wh_rob
-    # y-axis is wh_hum
-    # Plot ending trust (actual and estimate)
-    ax.scatter3D(wh_rob, wh_hum, trust_fb, s=25, c=trust_fb, vmin=0.0, vmax=1.0,
-                 cmap=mpl.colormaps[cmap], marker='o', label='feedback', depthshade=False)
+    indices = set()
+    # print(wh_rob)
+    # print(wh_hum)
+
+    image = np.ones((len(wh_rob_list), len(wh_hum_list)))
+    X = np.zeros_like(image)
+    Y = np.zeros_like(X)
+
+    for whr, whh, t in zip(wh_rob, wh_hum, trust_fb):
+        idx1 = round(whr / grid_stepsize)
+        idx2 = round(whh / grid_stepsize)
+        if (idx1, idx2) in indices:
+            # print(indices)
+            print(idx1, idx2, whr, whh)
+            # sys.exit()
+        indices.add((idx1, idx2))
+        image[idx1, idx2] = t
+        X[idx1, idx2] = whr
+        Y[idx1, idx2] = whh
+
+
+    # print(trust_fb)
+    # ax.imshow(image, cmap=cmap, vmin=0.0, vmax=1.0)
+    ax.plot_surface(X, Y, image, cmap=cmap,
+                    linewidth=0, antialiased=False)
+
     ax.set_xlabel(r'$w_h^r$', fontsize=16)
     ax.set_ylabel(r'$w_h^h$', fontsize=16)
-    ax.set_zlabel('Trust', fontsize=16)
-    ax.set_zlim([-0.05, 1.05])
-    ax.set_xlim(wh_rob_start - grid_stepsize, wh_rob_end)
-    ax.set_ylim(wh_hum_start - grid_stepsize, wh_hum_end)
     # ax.set_title(f'Threat level $d={threat_level}$')
 
     return ax
@@ -98,17 +121,17 @@ def analyze(parent_directory: str, ax: Axes3D, cmap: str='plasma'):
 
 def main():
 
-    cmap_str = 'plasma'
+    # cmap_str = 'plasma'
     # cmap_str = 'viridis'
     # cmap_str = 'inferno'
     # cmap_str = 'magma'
     # cmap_str = 'cividis'
-    # cmap_str = 'coolwarm'
+    cmap_str = 'coolwarm'
 
     fig = plt.figure()
     ax1 = fig.add_subplot(111, projection='3d')
-    parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.7")
-    # parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.3")
+    # parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.7")
+    parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.3")
     ax1 = analyze(parent_directory, ax1, cmap_str)
 
     cmap = plt.get_cmap(cmap_str)

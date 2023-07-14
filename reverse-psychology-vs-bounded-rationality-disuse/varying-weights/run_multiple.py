@@ -24,7 +24,7 @@ def main():
     
     wh_list = [wh_start + stepsize * i for i in range(num_weights)]
     wh_list_all = [stepsize * i for i in range(int(1/stepsize) + 1)]
-    parent_directory = "./data/BoundedRational/{:1.1f}/wh_start_{:1.2f}/".format(args.threat_level,
+    parent_directory = "./data/ReversePsych/{:1.1f}/wh_start_{:1.2f}/".format(args.threat_level,
                                                                                  args.wh_start)
 
     for wh_rob in wh_list_all:

@@ -9,11 +9,14 @@ from os import path, walk
 import json
 import datetime
 import seaborn as sns
+
 sns.set_theme(style='white', context='paper')
 # sns.set(font_scale=1.1)
+# mpl.rcParams['pdf.fonttype'] = 42
+# mpl.rcParams['ps.fonttype'] = 42
 
 
-def analyze(parent_directory: str, ax: plt.Axes, cmap: str='plasma'):
+def analyze(parent_directory: str, ax: plt.Axes, cmap: str = 'plasma'):
     # Most shapes are (num_simulations, num_sites or num_sites+1)
     # Step 1: Accumulate data
     # Get the list of subdirectories
@@ -101,18 +104,18 @@ def analyze(parent_directory: str, ax: plt.Axes, cmap: str='plasma'):
         indices.add((idx1, idx2))
         image[idx1, idx2] = t
 
-
     # print(trust_fb)
-    ax.imshow(image, cmap=cmap, vmin=0.0, vmax=1.0)
-    ax.set_xlabel(r'$w_h^r$', fontsize=16)
-    ax.set_ylabel(r'$w_h^h$', fontsize=16)
-    # ax.set_title(f'Threat level $d={threat_level}$')
+    # ax.imshow(image, cmap=cmap, vmin=0.0, vmax=1.0, origin='lower', extent=(-0.05, 0.95, 0.05, 0.95))
+    ax.imshow(image, cmap=cmap, vmin=0.0, vmax=1.0, origin='lower', extent=(0., 1., 0., 1.0))
+    ax.set_xlabel(r'$w_h^r$', fontsize=18)
+    ax.set_ylabel(r'$w_h^h$', fontsize=18)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
     return ax
 
 
 def main():
-
     # cmap_str = 'plasma'
     # cmap_str = 'viridis'
     # cmap_str = 'inferno'
@@ -120,10 +123,10 @@ def main():
     # cmap_str = 'cividis'
     cmap_str = 'coolwarm'
 
-    fig = plt.figure()
+    fig = plt.figure(layout='tight')
     ax1 = fig.add_subplot(111)
     parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.7")
-    parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.3")
+    # parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.3")
     ax1 = analyze(parent_directory, ax1, cmap_str)
 
     cmap = plt.get_cmap(cmap_str)
@@ -132,7 +135,8 @@ def main():
     sm = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
     cb = fig.colorbar(sm, ax=ax1, location='right')
-    cb.ax.set_title("scale")
+    cb.ax.set_title("scale", fontsize=14)
+    cb.ax.tick_params(labelsize=12)
 
     # ax1.set_title("End-of-mission Trust")
 

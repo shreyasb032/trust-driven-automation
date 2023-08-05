@@ -1,4 +1,6 @@
-- As a first step, assume that the robot knows the true trust parameters and the true reward parameters of the human
+- FIRST STEP
+
+- As a first step, assume that the robot knows the true trust parameters and the true reward parameters of the human. We will deal with learning later.
 	- This assumption can be relaxed later. 
 	- This means that there is no need to maintain a posterior and use Bayesian IRL 
 	- Also no need for a parameter learner class
@@ -10,7 +12,8 @@
 	- A simulated human that maintains and reports trust
 
 How would different simulation runs look?
-	- Different weights for the human and the robot
+	- Different weights for the human and the robot (for the same threshold)
+	- Human starts with different levels of trust (for the same threshold)
 	- Different value of the trust threshold(s)
 
 - What I want to see here

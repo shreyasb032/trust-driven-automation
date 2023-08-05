@@ -1,0 +1,23 @@
+- As a first step, assume that the robot knows the true trust parameters and the true reward parameters of the human
+	- This assumption can be relaxed later. 
+	- This means that there is no need to maintain a posterior and use Bayesian IRL 
+	- Also no need for a parameter learner class
+
+- As a first step, also assume that we are only using a single value of trust threshold. Adapt when trust is below this until it crosses it. Solve fixed reward if trust is above the threshold.
+
+- What we need?
+	- An MDP solver that takes in the current state, stage, reward parameters, and outputs the recommendation. 
+	- A simulated human that maintains and reports trust
+
+How would different simulation runs look?
+	- Different weights for the human and the robot
+	- Different value of the trust threshold(s)
+
+- What I want to see here
+	- Does trust stabilize at the set threshold?
+	- If so, how long does it take to get there?
+	- How different the reward weights have to be to observe different behavior?
+	- Compare this with the non-adaptive simulation behavior from the simulation paper. 
+
+- Remarks
+	- Should see most significant results when values are not aligned. 

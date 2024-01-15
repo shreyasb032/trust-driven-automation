@@ -1,6 +1,6 @@
-"""Here, the robot tries to estimate the human's weights but only uses them for performance computation for the trust update.
-The weights of the objective function of the robot are fixed. 
-Further, the true trust parameters of the human are not known a priori. They are updated using gradient descent after receiving trust feedback"""
+"""Here, the robot tries to estimate the human's weights but only uses them for performance computation for the trust
+update. The weights of the objective function of the robot are fixed. Further, the true trust parameters of the human
+are not known a priori. They are updated using gradient descent after receiving trust feedback"""
 
 import numpy as np
 import _context

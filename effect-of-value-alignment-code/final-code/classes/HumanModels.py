@@ -235,13 +235,3 @@ class BoundedRational(HumanBase):
         p0 = 1. / (1 + np.exp(r1 - r0))
 
         return np.random.choice([0, 1], p=[p0, 1 - p0])
-
-
-class AlwaysAccept(HumanBase):
-    """Human model that always accepts the recommendation, regardless of the trust level"""
-
-    def __init__(self, params):
-        super().__init__(params)
-
-    def choose_action(self, rec):
-        return rec

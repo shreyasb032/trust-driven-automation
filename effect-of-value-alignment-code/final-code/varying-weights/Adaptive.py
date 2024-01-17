@@ -297,8 +297,7 @@ class AdaptiveRobot:
             pickle.dump(data_all, f)
 
         json_file = os.path.join(data_directory, 'args.json')
-        json_data = {"health_weight_robot": args.health_weight_robot,
-                     "health_weight_human": args.health_weight_human}
+        json_data = {"health_weight_human": args.health_weight_human}
 
         with open(json_file, 'wt') as f:
             json.dump(json_data, f, indent=4)

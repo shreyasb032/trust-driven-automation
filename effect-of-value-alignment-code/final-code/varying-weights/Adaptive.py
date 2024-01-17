@@ -1,6 +1,6 @@
-"""Here, the robot tries to estimate the human's weights but only uses them for performance computation for the trust
-update. The weights of the objective function of the robot are fixed. Further, the true trust parameters of the human
-are not known a priori. They are updated using gradient descent after receiving trust feedback"""
+"""Here, the robot tries to estimate the human's weights and adopts them as its own.
+Further, the true trust parameters of the human are not known a priori. They are updated using gradient descent after
+receiving trust feedback"""
 
 import _context
 from Utils import *
@@ -17,11 +17,10 @@ import argparse
 import pickle
 from tqdm import tqdm
 import json
-import copy
 
 
-class NonAdaptiveRobot:
-    
+class AdaptiveRobot:
+
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
         self.trust_params_generator = TrustParamsGenerator(seed=123)
@@ -29,15 +28,14 @@ class NonAdaptiveRobot:
     def run_one_simulation(self, seed: int):
 
         args = self.args
-        # Output data: Trust feedback, trust estimation, posterior distribution, weights,
-        # healths, times, recommendations, actions
+        # Output data: Trust feedback, trust estimation,
+        # posterior distribution, weights, healths, times, recommendations, actions
         data = {}
 
-        # PARAMETERS THAT CAN BE MODIFIED
-        wh_rob = args.health_weight_robot             # Fixed health weight of the robot
+        # PARAMETERS THAT CAN BE MODIFIED #############################################################################
         wt_rob = args.trust_weight                    # Trust increase reward weight
         kappa = args.kappa                            # Assumed rationality coefficient in the bounded rationality model
-        stepsize = args.posterior_stepsize            # Stepsize in the posterior
+        stepsize = args.posterior_stepsize            # stepsize in the posterior
         wh_hum = args.health_weight_human             # True health weight of the human. time weight = 1 - health weight
         num_sites = args.num_sites                    # Number of sites in a mission (Horizon for planning)
         human_model_solver = args.human_model_solver  # The human model to be used by the solver
@@ -61,22 +59,25 @@ class NonAdaptiveRobot:
         err_tol = args.tolerance
         estimator = Estimator(num_iterations, gradient_stepsize, error_tol=err_tol, num_sites=num_sites)
 
-        PRINT_FLAG = args.print_flag     # Flag to decide whether to print the data to the console output
-        #############################################################################################################
+        PRINT_FLAG = args.print_flag  # Flag to decide whether to print the data to the console output
+        ##############################################################################################################
 
+        # Initialize posterior
+        posterior = Posterior(kappa=kappa, stepsize=stepsize, reward_fun=reward_fun)
+
+        # Sample the trust parameters
+        trust_params = self.trust_params_generator.generate()
+
+        wh_rob = posterior.get_mean()
         wc_rob = 1. - wh_rob
         est_human_weights = {'health': None, 'time': None}
         rob_weights = {'health': wh_rob, 'time': wc_rob, 'trust': wt_rob}
-
-        trust_params = self.trust_params_generator.generate()
-
-        solver = SolverConstantRewards(num_sites, rob_weights, trust_params.copy(), None, None, None,
+        solver = SolverConstantRewards(num_sites,
+                                       rob_weights,
+                                       trust_params.copy(), None, None, None,
                                        est_human_weights,
                                        hum_mod=human_model_dict[human_model_solver],
                                        reward_fun=reward_fun, hl=args.hl, tc=args.tc, kappa=kappa)
-
-        # Intialize posterior
-        posterior = Posterior(kappa=kappa, stepsize=stepsize, reward_fun=reward_fun)
 
         # Initialize human model
         wc_hum = 1. - wh_hum
@@ -112,17 +113,17 @@ class NonAdaptiveRobot:
         weights = posterior.weights.copy()
         perf_actual = np.zeros((num_sites,), dtype=int)
         perf_est = np.zeros((num_sites,), dtype=int)
-        
+
         # N+1 stuff
-        trust_feedback = np.zeros((num_sites+1,), dtype=float)
-        trust_estimate = np.zeros((num_sites+1,), dtype=float)
-        times = np.zeros((num_sites+1,), dtype=int)
-        healths = np.zeros((num_sites+1,), dtype=int)
-        parameter_estimates = np.zeros((num_sites+1, 4), dtype=float)
-        wh_means = np.zeros((num_sites+1,), dtype=float)
-        wh_map = np.zeros((num_sites+1,), dtype=float)
-        wh_map_prob = np.zeros((num_sites+1,), dtype=float)
-        posterior_dists = np.zeros((num_sites+1, len(posterior.dist)), dtype=float)
+        trust_feedback = np.zeros((num_sites + 1,), dtype=float)
+        trust_estimate = np.zeros((num_sites + 1,), dtype=float)
+        times = np.zeros((num_sites + 1,), dtype=int)
+        healths = np.zeros((num_sites + 1,), dtype=int)
+        parameter_estimates = np.zeros((num_sites + 1, 4), dtype=float)
+        wh_means = np.zeros((num_sites + 1,), dtype=float)
+        wh_map = np.zeros((num_sites + 1,), dtype=float)
+        wh_map_prob = np.zeros((num_sites + 1,), dtype=float)
+        posterior_dists = np.zeros((num_sites + 1, len(posterior.dist)), dtype=float)
 
         # Initialize health and time
         health = 100
@@ -158,6 +159,9 @@ class NonAdaptiveRobot:
         # For each site, get recommendation, choose action, update health, time, trust, posterior
         for i in range(num_sites):
 
+            # Update the reward weights
+            solver.update_reward_weights(posterior.get_mean())
+
             # Get the recommendation
             rec = solver.get_recommendation(i, posterior)
 
@@ -190,18 +194,18 @@ class NonAdaptiveRobot:
 
             # Use the old values of health and time to compute the performance
             solver.forward(i, rec, posterior)
-            trust_est_after = solver.get_trust_estimate(i+1)
-            trust_estimate[i+1] = trust_est_after
+            trust_est_after = solver.get_trust_estimate(i + 1)
+            trust_estimate[i + 1] = trust_est_after
 
             # Update trust (based on old values of health and time)
             human.update_trust(rec, threats[i], health_old, time_old)
             trust_fb_after = human.get_feedback()
-            trust_feedback[i+1] = trust_fb_after
+            trust_feedback[i + 1] = trust_fb_after
 
             # Update trust parameters
             opt_params = estimator.get_params(solver.trust_params, solver.get_last_performance(i), trust_fb_after, i)
             solver.update_params(opt_params)
-            parameter_estimates[i+1, :] = np.array(opt_params)
+            parameter_estimates[i + 1, :] = np.array(opt_params)
 
             # Storage
             perf_est[i] = solver.get_last_performance(i)
@@ -218,15 +222,15 @@ class NonAdaptiveRobot:
 
         if PRINT_FLAG:
             # Get the values after the last site
-            row = ['', '', '', '', str(health), str(current_time), "{:.2f}".format(human.get_mean()),
+            row = ['', '', '', '', str(health), str(current_time),
+                   "{:.2f}".format(human.get_mean()),
                    "{:.2f}".format(solver.get_trust_estimate(args.num_sites)),
-                   str(human.get_last_performance()),
-                   str(solver.get_last_performance(args.num_sites)),
+                   str(human.get_last_performance()), str(solver.get_last_performance(args.num_sites)),
                    "{:.2f}".format(posterior.get_mean()), "{:.2f}".format(posterior.get_map()[1])]
             table_data.append(row)
             # Print
             col_print(table_data)
-        
+
         # Store the final values after the last house
         healths[-1] = health
         times[-1] = current_time
@@ -260,12 +264,12 @@ class NonAdaptiveRobot:
 
         args = self.args
 
-        # PARAMETERS THAT CAN BE MODIFIED ##########################################################################
-        num_simulations = args.num_simulations      # Number of simulations to run
-        num_sites = args.num_sites                  # Number of sites in a mission (Horizon for planning)
-        stepsize = args.posterior_stepsize          # Stepsize in the posterior distribution over the weights
-        num_weights = int(1.0/stepsize) + 1         # Number of weight samples in the posterior distribution
-        ############################################################################################################
+        # PARAMETERS THAT CAN BE MODIFIED ############################################################################
+        num_simulations = args.num_simulations  # Number of simulations to run
+        num_sites = args.num_sites  # Number of sites in a mission (Horizon for planning)
+        stepsize = args.posterior_stepsize  # Stepsize in the posterior distrbution over the weights
+        num_weights = int(1.0 / stepsize) + 1  # Number of weight samples in the posterior distribution
+        ##############################################################################################################
 
         data_all = initialize_storage_dict(num_simulations, num_sites, num_weights)
 
@@ -275,16 +279,17 @@ class NonAdaptiveRobot:
                 # print(k)
                 data_all[k][i] = v
 
-        # STORING THE DATA
-
+        # STORING THE DATA #####################################################################################
         data_directory = os.path.join(parent_directory, timestamp)
+
         if not os.path.exists(data_directory):
             os.makedirs(data_directory)
 
-        simulation_parameter_file = os.path.join(parent_directory, 'sim_params.json')
+        simulation_parameter_file = os.path.join(parent_directory, "sim_params.json")
         if not os.path.exists(simulation_parameter_file):
             sim_params = vars(args).copy()
-            del sim_params['threat_level']
+            del sim_params['health_weight_human']
+            del sim_params['health_weight_robot']
             with open(simulation_parameter_file, 'wt') as f:
                 json.dump(sim_params, f, indent=4)
 
@@ -293,28 +298,25 @@ class NonAdaptiveRobot:
             pickle.dump(data_all, f)
 
         json_file = os.path.join(data_directory, 'args.json')
-        json_data = {'threat_level': args.threat_level}
+        json_data = {"health_weight_robot": args.health_weight_robot,
+                     "health_weight_human": args.health_weight_human}
+
         with open(json_file, 'wt') as f:
-            json.dump(json_data, f)
+            json.dump(json_data, f, indent=4)
 
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Non-adaptive solver that only uses '
-                                                 'learnt human weights to estimate trust')
+    parser = argparse.ArgumentParser(description='Adaptive solver that'
+                                                 'uses learnt human weights as its own')
 
     # Add the common arguments
     parser = add_common_args(parser)
 
     # Add specific arguments for this script
-    parser.add_argument('--health-weight-robot',
-                        type=float,
-                        help='Fixed health weight of the robot (default: 0.7)',
-                        default=0.7)
     parser.add_argument('--health-weight-human',
                         type=float,
                         help='True health weight of the human (default: 0.9)',
                         default=0.9)
 
-    nar = NonAdaptiveRobot(parser.parse_args())
-    nar.run('.', 'test_timestamp')
+    ar = AdaptiveRobot(parser.parse_args())
+    ar.run('.', 'test_timestamp')

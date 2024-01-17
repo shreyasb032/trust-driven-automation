@@ -99,6 +99,12 @@ class Solver:
         """
         self.trust_params = params.copy()
 
+    def update_reward_weights(self, wh, wc=None):
+        self.wh = wh
+        self.wc = 1.0 - wh
+        if wc is not None:
+            self.wc = wc
+
     def get_trust_params(self):
         """
         Helper function to return the currently estimated trust params of the human

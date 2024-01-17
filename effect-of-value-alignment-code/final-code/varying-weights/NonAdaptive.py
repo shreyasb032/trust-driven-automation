@@ -13,6 +13,7 @@ from classes.ThreatSetter import ThreatSetter
 from classes.RewardFunctions import Constant
 from classes.ParamsUpdater import Estimator
 from classes.PerformanceMetrics import ImmediateObservedReward, ImmediateExpectedReward
+from classes.ParamsGenerator import TrustParamsGenerator
 import os
 import argparse
 import pickle
@@ -24,6 +25,7 @@ class NonAdaptiveRobot:
     
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
+        self.trust_params_generator = TrustParamsGenerator(seed=123)
 
     def run_one_simulation(self, seed: int):
 
@@ -32,19 +34,13 @@ class NonAdaptiveRobot:
         # posterior distribution, weights, healths, times, recommendations, actions
         data = {}
 
-        trust_params_dict = {0: [30., 90., 10., 20.],
-                             1: [60., 60., 10., 20.],
-                             2: [90., 30., 10., 20.]}
-
         # PARAMETERS THAT CAN BE MODIFIED #############################################################################
-        wh_rob = args.health_weight_robot           # Fixed health weight of the robot
-        wt_rob = args.trust_weight                  # Trust increase reward weight
-        kappa = args.kappa                          # Assumed rationality coefficient in the bounded rationality model
-        stepsize = args.posterior_stepsize                    # stepsize in the posterior
-        wh_hum = args.health_weight_human           # True health weight of the human. time weight = 1 - health weight
-        trust_params_idx = args.trust_params        # Human's true trust parameters in the beta distribution model
-        trust_params = trust_params_dict[trust_params_idx]
-        num_sites = args.num_sites                  # Number of sites in a mission (Horizon for planning)
+        wh_rob = args.health_weight_robot             # Fixed health weight of the robot
+        wt_rob = args.trust_weight                    # Trust increase reward weight
+        kappa = args.kappa                            # Assumed rationality coefficient in the bounded rationality model
+        stepsize = args.posterior_stepsize            # stepsize in the posterior
+        wh_hum = args.health_weight_human             # True health weight of the human. time weight = 1 - health weight
+        num_sites = args.num_sites                    # Number of sites in a mission (Horizon for planning)
         human_model_solver = args.human_model_solver  # The human model to be used by the solver
         human_model_actual = args.human_model_actual  # The human model to simulate the human
 
@@ -69,6 +65,7 @@ class NonAdaptiveRobot:
         PRINT_FLAG = args.print_flag     # Flag to decide whether to print the data to the console output
         ##############################################################################################################
 
+        trust_params = self.trust_params_generator.generate()
         wc_rob = 1. - wh_rob
         est_human_weights = {'health': None, 'time': None}
         rob_weights = {'health': wh_rob, 'time': wc_rob, 'trust': wt_rob}

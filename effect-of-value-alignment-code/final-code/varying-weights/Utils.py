@@ -14,12 +14,12 @@ def add_common_args(parser: argparse.ArgumentParser):
                         help='Trust parameters for the human (0-low, 1-mid, 2-high), default=1',
                         default=1)
 
-    parser.add_argument('--num-sites', type=int, help='Number of sites in a mission (default: 40)', default=40)
+    parser.add_argument('--num-sites', type=int, help='Number of sites in a mission (default: 20)', default=20)
     parser.add_argument('--num-missions', type=int, help='Number of missions (default: 1)', default=1)
     parser.add_argument('--print-flag', type=bool, help="Flag to print the data to output (default: False)",
                         default=False)
 
-    parser.add_argument('--num-simulations', type=int, help='Number of simulations to run (default: 10)', default=10)
+    parser.add_argument('--num-simulations', type=int, help='Number of simulations to run (default: 40)', default=40)
 
     parser.add_argument('--posterior-stepsize', type=float,
                         help='Stepsize in the posterior distribution (default(0.05)', default=0.05)

@@ -19,7 +19,7 @@ from tqdm import tqdm
 import json
 
 
-class NonAdaptiveRobot:
+class AdaptiveRobot:
 
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args

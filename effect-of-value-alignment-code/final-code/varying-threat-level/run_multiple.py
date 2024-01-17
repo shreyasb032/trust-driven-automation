@@ -12,8 +12,8 @@ def main():
     # Add specific arguments for this script
     parser.add_argument('--d-start', type=float, help='Threat level to start the simulation (default:0.0)', default=0.0)
     parser.add_argument('--d-end', type=float, help='Threat level to start the simulation (default:1.0)', default=1.0)
-    parser.add_argument('--grid-step', type=float, help='stepsize on the weights grid (default:0.01)', default=0.01)
-    
+    parser.add_argument('--grid-step', type=float, help='stepsize on the weights grid (default:0.01)', default=0.05)
+
     args = parser.parse_args()
     stepsize = args.grid_step
     d_start = args.d_start

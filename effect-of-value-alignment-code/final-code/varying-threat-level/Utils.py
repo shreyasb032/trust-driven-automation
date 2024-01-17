@@ -36,8 +36,8 @@ def add_common_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--num-simulations',
                         type=int,
-                        help='Number of simulations to run (default: 20)',
-                        default=20)
+                        help='Number of simulations to run (default: 40)',
+                        default=40)
 
     parser.add_argument('--posterior-stepsize',
                         type=float,

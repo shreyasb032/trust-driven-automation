@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Dict
 
-seed = 123
 prob_bdm = 31./45.
 prob_disbeliever = 5./45.
 prob_oscillator = 1.0 - prob_bdm - prob_disbeliever
@@ -64,20 +63,19 @@ disbeliever_hist = {
 }
 
 
-
-
 class TrustParamsGenerator:
 
-    def __init__(self):
+    def __init__(self, seed=123):
         self.rng = np.random.default_rng(seed=seed)
         self.params = None
         self.n_bins = len(bdm_hist['Alpha']['p'])
+        self.group = None
 
     def choose(self, data: Dict):
         trust_params = {}
         for key in data.keys():
             hist_dict = data[key]
-            bin_choice = self.rng.choice(self.n_bins, hist_dict['p'])
+            bin_choice = self.rng.choice(self.n_bins, p=hist_dict['p'])
             bin_left, bin_right = hist_dict['bins'][bin_choice], hist_dict['bins'][bin_choice + 1]
             trust_params[key] = self.rng.uniform(bin_left, bin_right)
 
@@ -88,14 +86,17 @@ class TrustParamsGenerator:
 
         if choice == 0:
             # Bayesian decision maker
+            self.group = 'BDM'
             trust_params = self.choose(bdm_hist)
             self.params = [trust_params['Alpha'], trust_params['Beta'], trust_params['ws'], trust_params['wf']]
         elif choice == 1:
             # Disbeliever
+            self.group = 'Disbeliever'
             trust_params = self.choose(disbeliever_hist)
             self.params = [trust_params['Alpha'], trust_params['Beta'], trust_params['ws'], trust_params['wf']]
         elif choice == 2:
             # Oscillator
+            self.group = 'Oscillator'
             trust_params = self.choose(oscillator_hist)
             self.params = [trust_params['Alpha'], trust_params['Beta'], trust_params['ws'], trust_params['wf']]
 

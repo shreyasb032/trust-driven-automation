@@ -22,8 +22,8 @@ def main():
 
     num_weights = int((wh_end-wh_start)/stepsize) + 1
     
-    # wh_list = [wh_start + stepsize * i for i in range(num_weights)]
-    wh_list = [0.7, 0.85, 1.0]
+    wh_list = [wh_start + stepsize * i for i in range(num_weights)]
+    # wh_list = [0.7, 0.85, 1.0]
     wh_list_all = [stepsize * i for i in range(int(1/stepsize) + 1)]
     parent_directory = "./data/BoundedRational/{:1.1f}/wh_start_{:1.2f}/".format(args.threat_level,
                                                                                  args.wh_start)

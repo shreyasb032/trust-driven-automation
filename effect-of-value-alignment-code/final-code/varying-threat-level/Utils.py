@@ -21,8 +21,8 @@ def add_common_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--num-sites',
                         type=int,
-                        help='Number of sites in a mission (default: 40)',
-                        default=40)
+                        help='Number of sites in a mission (default: 20)',
+                        default=20)
 
     parser.add_argument('--num-missions',
                         type=int,

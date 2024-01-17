@@ -289,7 +289,6 @@ class AdaptiveRobot:
         if not os.path.exists(simulation_parameter_file):
             sim_params = vars(args).copy()
             del sim_params['health_weight_human']
-            del sim_params['health_weight_robot']
             with open(simulation_parameter_file, 'wt') as f:
                 json.dump(sim_params, f, indent=4)
 

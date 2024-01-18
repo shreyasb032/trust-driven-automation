@@ -79,7 +79,7 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float):
         final_exp_alpha = trust_params[0] + lower_bound_of_trust_increase * 40 * trust_params[2]
         final_exp_beta = trust_params[1] + (1 - lower_bound_of_trust_increase) * 40 * trust_params[3]
         final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta)
-        ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
+        # ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
     elif d_star > 1 and wh_hum > 0.5:
         # Region 3
         d_arr = np.array(threat_level)
@@ -87,7 +87,7 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float):
         final_exp_alpha = trust_params[0] + lower_bound_of_trust_increase * 40 * trust_params[2]
         final_exp_beta = trust_params[1] + (1 - lower_bound_of_trust_increase) * 40 * trust_params[3]
         final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta)
-        ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
+        # ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
     elif d_star < 1 and wh_hum > 0.5:
         # Region 4
         d_arr = np.array(threat_level)
@@ -95,14 +95,14 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float):
         final_exp_alpha = trust_params[0] + lower_bound_of_trust_increase * 40 * trust_params[2]
         final_exp_beta = trust_params[1] + (1 - lower_bound_of_trust_increase) * 40 * trust_params[3]
         final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta)
-        ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
+        # ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
     else:
         # Region 1
         d_arr = np.array(threat_level)
         final_exp_alpha = trust_params[0] + 40 * trust_params[2]
         final_exp_beta = trust_params[1]
         final_exp_trust = final_exp_alpha / (final_exp_alpha + final_exp_beta) * np.ones_like(d_arr)
-        ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
+        # ax.plot(d_arr, final_exp_trust, lw=line_width, c='black', ls='dashed', label='Expected')
 
     ax.legend(fontsize=16, loc='lower left')
     ax.set_xlabel(r'$d$', fontsize=16)
@@ -117,9 +117,9 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float):
 
 def main():
 
-    parent_directory = os.path.join('..', 'varying-threat-level', 'data', 'BoundedRational', 'MidInitialTrust')
-    wh_rob = 0.9
-    wh_hum = 0.9
+    parent_directory = os.path.join('..', '..', 'varying-threat-level', 'data', 'BoundedRational')
+    wh_rob = 0.7
+    wh_hum = 0.7
     analyze(parent_directory, wh_rob, wh_hum)
 
 

@@ -125,8 +125,7 @@ def main():
 
     fig = plt.figure(layout='tight')
     ax1 = fig.add_subplot(111)
-    parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.7")
-    # parent_directory = path.join("..", "varying-weights", "data", "BoundedRational", "MidInitialTrust", "0.3")
+    parent_directory = path.join("..", "..", "varying-weights", "data", "BoundedRational", "0.7")
     ax1 = analyze(parent_directory, ax1, cmap_str)
 
     cmap = plt.get_cmap(cmap_str)

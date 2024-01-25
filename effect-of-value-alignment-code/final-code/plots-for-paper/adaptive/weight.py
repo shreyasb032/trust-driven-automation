@@ -75,7 +75,7 @@ def analyze(parent_directory: str, threat_level: float):
 
 def main():
     parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'BoundedRational', 'Adaptive')
-    threat_level = 0.7
+    threat_level = 0.3
     analyze(parent_directory, threat_level)
 
 

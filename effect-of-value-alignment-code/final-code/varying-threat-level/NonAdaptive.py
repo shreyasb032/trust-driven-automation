@@ -5,7 +5,7 @@ are not known a priori. They are updated using gradient descent after receiving 
 import _context
 from Utils import *
 from classes.POMDPSolver import SolverConstantRewards
-from classes.HumanModels import BoundedRational, ReversePsychology
+from classes.HumanModels import BoundedRational, ReversePsychology, OneStepOptimal
 from classes.IRLModel import Posterior
 from classes.ThreatSetter import ThreatSetter
 from classes.RewardFunctions import Constant
@@ -97,11 +97,16 @@ class NonAdaptiveRobot:
                                     reward_fun=reward_fun,
                                     kappa=1.0,
                                     performance_metric=perf_metric)
-        else:
+        elif human_model_actual == 1:
             human = ReversePsychology(trust_params,
                                       human_weights,
                                       reward_fun=reward_fun,
                                       performance_metric=perf_metric)
+        elif human_model_actual == 2:
+            human = OneStepOptimal(trust_params,
+                                   human_weights,
+                                   reward_fun=reward_fun,
+                                   performance_metric=perf_metric)
 
         # THINGS TO LOOK FOR AND STORE AND PLOT/PRINT
         # Trust, posterior after every interaction, health, time, recommendation, action

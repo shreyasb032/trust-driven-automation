@@ -22,7 +22,7 @@ def main():
     num_weights = int((wh_end - wh_start) / stepsize) + 1
 
     wh_list = [wh_start + stepsize * i for i in range(num_weights)]
-    parent_directory = "./data/BoundedRational/Adaptive/{:1.1f}".format(args.threat_level)
+    parent_directory = "./data/OneStepOptimal/Adaptive/{:1.1f}".format(args.threat_level)
 
     for wh_hum in wh_list:
         timestamp = time.strftime("%Y%m%d-%H%M%S") + '/'

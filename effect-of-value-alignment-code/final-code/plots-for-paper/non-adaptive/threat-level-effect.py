@@ -117,7 +117,7 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float):
 
 def main():
 
-    parent_directory = os.path.join('..', '..', 'varying-threat-level', 'data', 'BoundedRational')
+    parent_directory = os.path.join('..', '..', 'varying-threat-level', 'data', 'OneStepOptimal')
     wh_rob = 0.5
     wh_hum = 0.3
     analyze(parent_directory, wh_rob, wh_hum)

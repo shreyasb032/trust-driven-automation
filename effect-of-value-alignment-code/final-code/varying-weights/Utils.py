@@ -53,8 +53,8 @@ def add_common_args(parser: argparse.ArgumentParser):
     parser.add_argument('--human-model-actual',
                         type=int,
                         help='Human model to be used to simulate the human - 0:bounded rational, 1:reverse psychology, '
-                             '2:disuse',
-                        default=0)
+                             '2:one step optimal',
+                        default=2)
     return parser
 
 

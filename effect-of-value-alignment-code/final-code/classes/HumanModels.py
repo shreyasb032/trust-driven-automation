@@ -152,8 +152,8 @@ class ReversePsychology(HumanBase):
         return np.random.choice([rec, 1 - rec], p=[self.trust, 1 - self.trust])
 
 
-class Disuse(HumanBase):
-    """Old Disuse Model: Accept recommendation with probability trust, choose the action which gives the best
+class OneStepOptimal(HumanBase):
+    """Accept recommendation with probability trust, choose the action which gives the best
         immediate expected reward otherwise"""
 
     def __init__(self, params: List, reward_weights: Dict, reward_fun: RewardsBase,

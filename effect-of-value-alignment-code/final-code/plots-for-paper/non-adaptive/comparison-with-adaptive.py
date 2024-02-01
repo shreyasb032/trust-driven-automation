@@ -16,10 +16,10 @@ def analyze(parent_directory: str, threat_level: float):
     # Get the list of subdirectories
     directory_list = []
     data_directory = os.path.join(parent_directory, str(round(threat_level, 1)))
-    print(data_directory)
+    # print(data_directory)
     for root, dirs, files in walk(data_directory):
         for directory in dirs:
-            print(directory)
+            # print(directory)
             try:
                 datetime.datetime.strptime(directory, "%Y%m%d-%H%M%S")
                 directory_list.append(path.join(root, directory))
@@ -42,6 +42,7 @@ def analyze(parent_directory: str, threat_level: float):
         with open(args_file, 'r') as f:
             args = json.load(f)
 
+        # print(args_file)
         whr = args['health_weight_robot']
         if whr != 0.5:
             continue
@@ -71,9 +72,9 @@ def analyze(parent_directory: str, threat_level: float):
 
 
 def main():
-    parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'BoundedRational', 'Adaptive')
-    # parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'ReversePsychology', 'Adaptive')
-    # parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal', 'Adaptive')
+    parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'BoundedRational')
+    # parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'ReversePsychology')
+    # parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal')
 
     threat_level = 0.3
     analyze(parent_directory, threat_level)

@@ -1,5 +1,3 @@
-import os.path
-
 import _context
 from classes.DataReader import PickleReader
 import numpy as np
@@ -8,7 +6,6 @@ from os import path, walk
 import json
 import datetime
 import seaborn as sns
-from scipy.stats import beta
 
 sns.set_theme(style='white', context='paper')
 
@@ -18,7 +15,7 @@ def analyze(parent_directory: str, threat_level: float):
     # Step 1: Accumulate data
     # Get the list of subdirectories
     directory_list = []
-    data_directory = os.path.join(parent_directory, str(round(threat_level, 1)))
+    data_directory = path.join(parent_directory, str(round(threat_level, 1)))
     print(data_directory)
     for root, dirs, files in walk(data_directory):
         for directory in dirs:
@@ -74,7 +71,7 @@ def analyze(parent_directory: str, threat_level: float):
 
 
 def main():
-    parent_directory = os.path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal', 'Adaptive')
+    parent_directory = path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal', 'Adaptive')
     threat_level = 0.3
     analyze(parent_directory, threat_level)
 

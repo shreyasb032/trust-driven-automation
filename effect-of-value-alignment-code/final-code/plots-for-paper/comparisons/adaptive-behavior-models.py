@@ -7,7 +7,7 @@ from os import path, walk
 import json
 import datetime
 import seaborn as sns
-sns.set_theme(style='white', context='paper')
+sns.set_theme(style='whitegrid', context='paper')
 
 
 def analyze(parent_directory: str, threat_level: float, color: str, behavior: str, marker: str,
@@ -53,17 +53,24 @@ def analyze(parent_directory: str, threat_level: float, color: str, behavior: st
     if ax is None:
         fig, ax = plt.subplots(layout='tight')
 
-    ax.scatter(wh_hum, trust_fb, s=64, c='tab:blue', marker='o', label='Feedback')
+    ax.scatter(wh_hum, trust_fb, s=64, c=color, marker=marker, label=behavior)
 
     return ax
 
 
 def main():
 
-    threat_level = 0.3
+    threat_level = 0.7
 
     parent_directory = path.join('..', '..', 'varying-weights', 'data', 'BoundedRational', 'Adaptive')
     ax = analyze(parent_directory, threat_level, color='tab:blue', behavior='BRD', marker='o', ax=None)
+
+    parent_directory = path.join('..', '..', 'varying-weights', 'data', 'ReversePsychology', 'Adaptive')
+    ax = analyze(parent_directory, threat_level, color='tab:orange', behavior='RP', marker='v', ax=ax)
+
+    parent_directory = path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal', 'Adaptive')
+    ax = analyze(parent_directory, threat_level, color='tab:gray', behavior='OneStep', marker='s', ax=ax)
+
     ax.legend(fontsize=16, loc='lower left')
     ax.set_xlabel(r'$w^h_h$', fontsize=16)
     ax.set_ylabel(r'$t_N$', fontsize=16)
@@ -71,12 +78,6 @@ def main():
     plt.yticks(fontsize=14)
     plt.xticks(fontsize=14)
     ax.set_title(r'End-of-mission trust', fontsize=16)
-
-    parent_directory = path.join('..', '..', 'varying-weights', 'data', 'ReversePsychology', 'Adaptive')
-    ax = analyze(parent_directory, threat_level, color='tab:orange', behavior='RP', marker='v', ax=ax)
-
-    parent_directory = path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal', 'Adaptive')
-    ax = analyze(parent_directory, threat_level, color='tab:gray', behavior='OneStep', marker='s', ax=ax)
 
     plt.show()
 

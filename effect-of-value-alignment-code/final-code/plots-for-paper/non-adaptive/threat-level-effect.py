@@ -9,7 +9,7 @@ import json
 import datetime
 import seaborn as sns
 from scipy.stats import beta
-sns.set_theme(style='white', context='paper')
+sns.set_theme(style='whitegrid', context='paper')
 
 
 def analyze(parent_directory: str, wh_rob: float, wh_hum: float):

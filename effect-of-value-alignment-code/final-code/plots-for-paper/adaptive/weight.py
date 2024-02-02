@@ -7,7 +7,7 @@ import json
 import datetime
 import seaborn as sns
 
-sns.set_theme(style='white', context='paper')
+sns.set_theme(style='whitegrid', context='paper')
 
 
 def analyze(parent_directory: str, threat_level: float):
@@ -72,7 +72,7 @@ def analyze(parent_directory: str, threat_level: float):
 
 def main():
     parent_directory = path.join('..', '..', 'varying-weights', 'data', 'OneStepOptimal', 'Adaptive')
-    threat_level = 0.3
+    threat_level = 0.7
     analyze(parent_directory, threat_level)
 
 

@@ -8,7 +8,7 @@ from os import path, walk
 import json
 import datetime
 import seaborn as sns
-sns.set_theme(style='white', context='paper')
+sns.set_theme(style='whitegrid', context='paper')
 
 
 def analyze(parent_directory: str, wh_hum: float):

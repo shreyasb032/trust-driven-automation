@@ -67,7 +67,12 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float, ax: plt.Axes,
     # y-axis is wh_hum
     # Plot ending trust (actual and estimate)
     # fig, ax = plt.subplots(layout='tight')
-    ax.scatter(threat_level, trust_fb, s=64, c='tab:blue', marker='o', label='Feedback')
+    # ax.scatter(threat_level, trust_fb, s=64, c='tab:blue', marker='o', label='Feedback')
+
+    indices = np.argsort(threat_level)
+    threat_level = np.array(threat_level)[indices]
+    trust_fb = np.array(trust_fb)[indices]
+    ax.plot(threat_level, trust_fb, c='tab:blue', label='Feedback', lw=4)
 
     # ax.legend(fontsize=16, loc='lower left')
     if label_x:

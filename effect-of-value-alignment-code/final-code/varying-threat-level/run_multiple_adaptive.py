@@ -22,7 +22,7 @@ def main():
     num_levels = int((d_end - d_start) / stepsize) + 1
 
     d_list = [d_start + stepsize * i for i in range(num_levels)]
-    data_directory = "./data/OneStepOptimal/Adaptive/hum{:1.1f}/".format(args.health_weight_human)
+    data_directory = "./data/ReversePsychology/Adaptive/hum{:1.1f}/".format(args.health_weight_human)
 
     for d in d_list:
         timestamp = time.strftime("%Y%m%d-%H%M%S") + '/'

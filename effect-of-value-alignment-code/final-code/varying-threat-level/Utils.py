@@ -14,10 +14,10 @@ def add_common_args(parser: argparse.ArgumentParser):
                         help='rationality coefficient (default: 0.2)',
                         default=0.2)
 
-    parser.add_argument('--trust-params',
-                        type=int,
-                        help='Trust parameters for the human (0-low, 1-mid, 2-high), default=1',
-                        default=1)
+    # parser.add_argument('--trust-params',
+    #                     type=int,
+    #                     help='Trust parameters for the human (0-low, 1-mid, 2-high), default=1',
+    #                     default=1)
 
     parser.add_argument('--num-sites',
                         type=int,
@@ -94,7 +94,7 @@ def add_common_args(parser: argparse.ArgumentParser):
                         type=int,
                         help='Human model to be used to simulate the human - 0:bounded rational, 1:reverse psychology, '
                              '2:disuse',
-                        default=2)
+                        default=1)
 
     return parser
 

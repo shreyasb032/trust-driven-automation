@@ -10,7 +10,8 @@ prob_oscillator = 1.0 - prob_bdm - prob_disbeliever
 
 class TrustParamsGenerator:
 
-    def __init__(self, seed=123, add_noise=True):
+    def __init__(self, seed=123, add_noise=False):
+        self.params_list = None
         self.seed = seed
         self.rng = np.random.default_rng(seed)
         self.add_noise = add_noise
@@ -55,7 +56,7 @@ class TrustParamsGenerator:
                 self.params[key] = self.bdm_dict[key][index]
                 if self.add_noise:
                     self.params[key] += self.generate_noise()
-                    self.params[key] = max(self.params[key], 0.)
+                    self.params[key] = max(self.params[key], 2.0)
         # If disbeliever
         elif choice == 1:
             index = self.rng.choice(self.num_disbelievers)
@@ -63,7 +64,7 @@ class TrustParamsGenerator:
                 self.params[key] = self.disbeliever_dict[key][index]
                 if self.add_noise:
                     self.params[key] += self.generate_noise()
-                    self.params[key] = max(self.params[key], 0.)
+                    self.params[key] = max(self.params[key], 2.0)
         # If oscillator
         elif choice == 2:
             index = self.rng.choice(self.num_oscillators)
@@ -71,9 +72,10 @@ class TrustParamsGenerator:
                 self.params[key] = self.oscillator_dict[key][index]
                 if self.add_noise:
                     self.params[key] += self.generate_noise()
-                    self.params[key] = max(self.params[key], 0.)
+                    self.params[key] = max(self.params[key], 2.0)
 
-        return self.params
+        self.params_list = [self.params['Alpha'], self.params['Beta'], self.params['ws'], self.params['wf']]
+        return self.params_list
 
 # OLD METHOD WITH INDEPENDENT HISTOGRAMS ##############################################################################
 # bdm_hist = {

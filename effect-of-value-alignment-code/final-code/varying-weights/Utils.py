@@ -9,17 +9,21 @@ def add_common_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--kappa', type=float, help='rationality coefficient (default: 0.2)', default=0.2)
 
-    parser.add_argument('--trust-params',
-                        type=int,
-                        help='Trust parameters for the human (0-low, 1-mid, 2-high), default=1',
-                        default=1)
+    # parser.add_argument('--trust-params',
+    #                     type=int,
+    #                     help='Trust parameters for the human (0-low, 1-mid, 2-high), default=1',
+    #                     default=1)
 
-    parser.add_argument('--num-sites', type=int, help='Number of sites in a mission (default: 20)', default=20)
+    parser.add_argument('--num-sites',
+                        type=int, help='Number of sites in a mission (default: 20)', default=20)
+
     parser.add_argument('--num-missions', type=int, help='Number of missions (default: 1)', default=1)
+
     parser.add_argument('--print-flag', type=bool, help="Flag to print the data to output (default: False)",
                         default=False)
 
-    parser.add_argument('--num-simulations', type=int, help='Number of simulations to run (default: 40)', default=40)
+    parser.add_argument('--num-simulations',
+                        type=int, help='Number of simulations to run (default: 40)', default=40)
 
     parser.add_argument('--posterior-stepsize', type=float,
                         help='Stepsize in the posterior distribution (default(0.05)', default=0.05)
@@ -54,7 +58,7 @@ def add_common_args(parser: argparse.ArgumentParser):
                         type=int,
                         help='Human model to be used to simulate the human - 0:bounded rational, 1:reverse psychology, '
                              '2:one step optimal',
-                        default=2)
+                        default=1)
     return parser
 
 

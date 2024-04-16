@@ -72,16 +72,18 @@ def analyze(parent_directory: str, wh_rob: float, wh_hum: float, ax: plt.Axes,
     indices = np.argsort(threat_level)
     threat_level = np.array(threat_level)[indices]
     trust_fb = np.array(trust_fb)[indices]
-    ax.plot(threat_level, trust_fb, c='tab:blue', label='Feedback', lw=4)
+    ax.plot(threat_level, trust_fb, c='tab:blue', label='Feedback', lw=8)
+    plt.yticks(fontsize=20)
+    plt.xticks(fontsize=20)
 
     # ax.legend(fontsize=16, loc='lower left')
     if label_x:
-        ax.set_xlabel(r'$d$', fontsize=16)
+        ax.set_xlabel(r'$d$', fontsize=24)
     if label_y:
-        ax.set_ylabel(r'$t_N$', fontsize=16)
+        ax.set_ylabel(r'$t_N$', fontsize=24)
 
     ax.set_ylim([-0.05, 1.05])
-    ax.set_title(r'$w_h^r={:1.1f}$, $w_h^h={:1.1f}$'.format(wh_rob, wh_hum), fontsize=16)
+    ax.set_title(r'$w_h^r={:1.1f}$, $w_h^h={:1.1f}$'.format(wh_rob, wh_hum), fontsize=24)
 
 
 def main():

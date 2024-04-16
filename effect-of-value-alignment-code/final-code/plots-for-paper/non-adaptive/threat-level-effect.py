@@ -84,23 +84,28 @@ def main():
     # parent_directory = os.path.join('..', '..', 'varying-threat-level', 'data', 'BoundedRational')
     parent_directory = os.path.join('..', '..', 'varying-threat-level', 'data', 'ReversePsychology')
 
-    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True, figsize=(8, 6), layout='tight')
+    # fig, axs = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True, figsize=(8, 6), layout='tight')
+    fig, axs = plt.subplots(nrows=1, ncols=4, sharex=True, sharey=True, figsize=(16, 6), layout='tight')
 
     wh_rob = 0.3
     wh_hum = 0.3
-    analyze(parent_directory, wh_rob, wh_hum, axs[0, 0], label_y=True)
+    # analyze(parent_directory, wh_rob, wh_hum, axs[0, 0], label_y=True)
+    analyze(parent_directory, wh_rob, wh_hum, axs[0], label_y=True)
 
     wh_rob = 0.3
     wh_hum = 0.7
-    analyze(parent_directory, wh_rob, wh_hum, axs[0, 1])
+    # analyze(parent_directory, wh_rob, wh_hum, axs[0, 1])
+    analyze(parent_directory, wh_rob, wh_hum, axs[1])
 
     wh_rob = 0.7
     wh_hum = 0.3
-    analyze(parent_directory, wh_rob, wh_hum, axs[1, 0], label_x=True, label_y=True)
+    # analyze(parent_directory, wh_rob, wh_hum, axs[1, 0], label_x=True, label_y=True)
+    analyze(parent_directory, wh_rob, wh_hum, axs[2], label_x=True, label_y=True)
 
     wh_rob = 0.7
     wh_hum = 0.7
-    analyze(parent_directory, wh_rob, wh_hum, axs[1, 1], label_x=True)
+    # analyze(parent_directory, wh_rob, wh_hum, axs[1, 1], label_x=True)
+    analyze(parent_directory, wh_rob, wh_hum, axs[3], label_x=True)
 
     plt.show()
 

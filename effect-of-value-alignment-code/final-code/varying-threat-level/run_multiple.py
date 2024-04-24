@@ -22,7 +22,7 @@ def main():
     num_levels = int((d_end - d_start) / stepsize) + 1
 
     d_list = [d_start + stepsize * i for i in range(num_levels)]
-    data_directory = "./data/ReversePsychology/rob{:1.1f}/hum{:1.1f}/".format(args.health_weight_robot,
+    data_directory = "./data/BoundedRational/rob{:1.1f}/hum{:1.1f}/".format(args.health_weight_robot,
                                                                               args.health_weight_human)
 
     for d in d_list:

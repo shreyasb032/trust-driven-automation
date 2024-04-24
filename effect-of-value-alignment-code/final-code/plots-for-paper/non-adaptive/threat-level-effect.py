@@ -123,6 +123,13 @@ def main():
     fig, ax = plt.subplots(nrows=1, ncols=1, layout='tight')
     analyze(parent_directory, wh_rob, wh_hum, ax, label_y=True, label_x=True)
 
+    wh_rob = 0.9
+    wh_hum = 0.9
+    # analyze(parent_directory, wh_rob, wh_hum, axs[1, 1], label_x=True)
+    # analyze(parent_directory, wh_rob, wh_hum, axs[3], label_x=True)
+    fig, ax = plt.subplots(nrows=1, ncols=1, layout='tight')
+    analyze(parent_directory, wh_rob, wh_hum, ax, label_y=True, label_x=True)
+
     plt.show()
 
 
